@@ -7,9 +7,7 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Courier New', monospace; background: #07071a; color: #e0e0f0; min-height: 100vh; }
-    #app { min-height: 100vh; }
 
-    /* Header */
     .header { background: #1a1a2e; color: #e94560; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid #e94560; }
     .header-logo { font-size: 22px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; }
     .header-clock { font-size: 13px; color: #a0a0c0; }
@@ -17,32 +15,35 @@
     .live-dot { width: 10px; height: 10px; border-radius: 50%; background: #e94560; display: inline-block; animation: blink 1s infinite; margin-right: 6px; }
     @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
 
-    /* On Now banner */
-    .on-now-banner { background: #1a0810; border-bottom: 1px solid #e94560; padding: 8px 20px; display: flex; gap: 12px; align-items: center; overflow-x: auto; }
-    .on-now-label { font-size: 10px; color: #e94560; text-transform: uppercase; letter-spacing: 2px; font-weight: 700; white-space: nowrap; margin-right: 4px; }
+    .on-now-banner { background: #1a0810; border-bottom: 1px solid #e94560; padding: 8px 20px; display: flex; gap: 12px; align-items: center; overflow-x: auto; min-height: 38px; }
+    .on-now-label { font-size: 10px; color: #e94560; text-transform: uppercase; letter-spacing: 2px; font-weight: 700; white-space: nowrap; }
     .on-now-chip { background: #2a0815; border: 1px solid #e94560; border-radius: 3px; padding: 4px 10px; color: #e0e0f0; font-size: 11px; cursor: pointer; white-space: nowrap; display: flex; align-items: center; gap: 6px; transition: background 0.15s; text-decoration: none; }
     .on-now-chip:hover { background: #e94560; }
 
-    /* Toolbar */
     .toolbar { background: #16213e; padding: 8px 20px; display: flex; gap: 10px; align-items: center; border-bottom: 1px solid #2a2a4a; flex-wrap: wrap; }
     .filter-btn { background: transparent; border: 1px solid #3a3a5a; color: #a0a0c0; padding: 4px 12px; border-radius: 3px; cursor: pointer; font-size: 12px; font-family: 'Courier New', monospace; transition: all 0.15s; }
     .filter-btn.active { background: #e94560; border-color: #e94560; color: #fff; }
     .filter-btn:hover:not(.active) { border-color: #e94560; color: #e94560; }
     .add-btn { background: #e94560; border: none; color: #fff; padding: 6px 16px; border-radius: 3px; cursor: pointer; font-size: 12px; font-family: 'Courier New', monospace; margin-left: auto; font-weight: 700; }
+    .refresh-btn { background: transparent; border: 1px solid #3a3a5a; color: #a0a0c0; padding: 4px 10px; border-radius: 3px; cursor: pointer; font-size: 12px; font-family: 'Courier New', monospace; transition: all 0.15s; }
+    .refresh-btn:hover { border-color: #e94560; color: #e94560; }
 
-    /* Grid */
-    .grid-container { overflow-x: auto; padding: 0; }
+    .grid-container { overflow-x: auto; }
     .guide-grid { display: grid; min-width: 900px; }
     .time-header-row { display: flex; background: #16213e; border-bottom: 2px solid #2a2a4a; position: sticky; top: 0; z-index: 10; }
-    .channel-col-header { width: 160px; min-width: 160px; padding: 8px 12px; font-size: 11px; color: #6060a0; text-transform: uppercase; letter-spacing: 1px; border-right: 1px solid #2a2a4a; }
+    .channel-col-header { width: 170px; min-width: 170px; padding: 8px 12px; font-size: 11px; color: #6060a0; text-transform: uppercase; letter-spacing: 1px; border-right: 1px solid #2a2a4a; }
     .time-slots-header { display: flex; flex: 1; }
     .time-slot-label { flex: 1; padding: 8px 4px; font-size: 11px; color: #6060a0; text-align: center; border-right: 1px solid #2a2a4a; min-width: 90px; }
     .channel-row { display: flex; border-bottom: 1px solid #2a2a4a; min-height: 72px; }
-    .channel-info { width: 160px; min-width: 160px; background: #0f0f23; border-right: 2px solid #2a2a4a; padding: 10px 12px; display: flex; flex-direction: column; justify-content: center; }
+    .channel-info { width: 170px; min-width: 170px; background: #0f0f23; border-right: 2px solid #2a2a4a; padding: 8px 12px; display: flex; flex-direction: column; justify-content: center; gap: 4px; }
     .channel-name { font-size: 13px; font-weight: 700; color: #e0e0f0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .channel-category { font-size: 10px; color: #6060a0; margin-top: 3px; text-transform: uppercase; letter-spacing: 1px; }
+    .channel-category { font-size: 10px; color: #6060a0; text-transform: uppercase; letter-spacing: 1px; }
+    .channel-actions { display: flex; gap: 6px; }
+    .ch-btn { background: transparent; border: 1px solid #2a2a4a; color: #6060a0; padding: 2px 6px; border-radius: 2px; cursor: pointer; font-size: 10px; font-family: 'Courier New', monospace; transition: all 0.15s; }
+    .ch-btn:hover { border-color: #e94560; color: #e94560; }
+
     .programs-row { flex: 1; display: flex; position: relative; background: #0a0a1a; }
-    .program-block { position: absolute; top: 4px; bottom: 4px; border-radius: 3px; padding: 6px 8px; cursor: pointer; overflow: hidden; border: 1px solid transparent; transition: all 0.15s; display: flex; flex-direction: column; justify-content: space-between; text-decoration: none; }
+    .program-block { position: absolute; top: 4px; bottom: 4px; border-radius: 3px; padding: 6px 8px; overflow: hidden; border: 1px solid transparent; transition: all 0.15s; display: flex; flex-direction: column; justify-content: space-between; text-decoration: none; }
     .program-block:hover { filter: brightness(1.2); border-color: rgba(255,255,255,0.3); z-index: 5; }
     .program-block.on-now { box-shadow: 0 0 0 2px #e94560; z-index: 3; }
     .program-block.upcoming { opacity: 0.75; }
@@ -59,12 +60,16 @@
     .now-line::before { content: ''; position: absolute; top: 0; left: -4px; width: 10px; height: 10px; background: #e94560; border-radius: 50%; }
     .empty-row { flex: 1; display: flex; align-items: center; padding-left: 12px; }
     .empty-msg { font-size: 11px; color: #3a3a5a; font-style: italic; }
+    .loading-row { flex: 1; display: flex; align-items: center; padding-left: 12px; gap: 8px; }
+    .spinner { width: 12px; height: 12px; border: 2px solid #3a3a5a; border-top-color: #e94560; border-radius: 50%; animation: spin 0.7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-msg { font-size: 11px; color: #6060a0; font-style: italic; }
 
-    /* Modal */
     .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 100; align-items: center; justify-content: center; }
     .modal-overlay.open { display: flex; }
-    .modal { background: #1a1a2e; border: 1px solid #3a3a5a; border-radius: 6px; padding: 24px; width: 360px; max-width: 95vw; }
-    .modal h3 { color: #e94560; font-size: 16px; margin-bottom: 16px; letter-spacing: 1px; }
+    .modal { background: #1a1a2e; border: 1px solid #3a3a5a; border-radius: 6px; padding: 24px; width: 380px; max-width: 95vw; }
+    .modal h3 { color: #e94560; font-size: 16px; margin-bottom: 6px; letter-spacing: 1px; }
+    .modal-subtitle { font-size: 11px; color: #6060a0; margin-bottom: 16px; }
     .modal label { display: block; font-size: 11px; color: #a0a0c0; margin-bottom: 4px; margin-top: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
     .modal input, .modal select { width: 100%; background: #0a0a1a; border: 1px solid #3a3a5a; color: #e0e0f0; padding: 7px 10px; border-radius: 3px; font-family: 'Courier New', monospace; font-size: 13px; outline: none; }
     .modal input:focus, .modal select:focus { border-color: #e94560; }
@@ -74,8 +79,14 @@
     .btn-save { background: #e94560; border: none; color: #fff; }
     .btn-cancel { background: transparent; border: 1px solid #3a3a5a; color: #a0a0c0; }
     .btn-cancel:hover { border-color: #e94560; color: #e94560; }
+    .fetch-status { font-size: 11px; margin-top: 10px; padding: 6px 10px; border-radius: 3px; display: none; }
+    .fetch-status.loading { display: block; background: #16213e; color: #a0a0c0; }
+    .fetch-status.success { display: block; background: #0a2a1a; color: #4ade80; border: 1px solid #166534; }
+    .fetch-status.error { display: block; background: #2a0a0a; color: #f87171; border: 1px solid #991b1b; }
 
-    /* Scrollbar */
+    .toast { position: fixed; bottom: 20px; right: 20px; background: #1a1a2e; border: 1px solid #3a3a5a; color: #e0e0f0; padding: 10px 16px; border-radius: 4px; font-size: 12px; z-index: 200; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+    .toast.show { opacity: 1; }
+
     ::-webkit-scrollbar { height: 6px; width: 6px; }
     ::-webkit-scrollbar-track { background: #0a0a1a; }
     ::-webkit-scrollbar-thumb { background: #3a3a5a; border-radius: 3px; }
@@ -87,7 +98,7 @@
     <div class="header-logo"><span class="live-dot"></span>StreamGuide</div>
     <div class="header-right">
       <div class="header-clock" id="clock">--:--:--</div>
-      <button class="add-btn" onclick="openModal()">+ Add Stream</button>
+      <button class="add-btn" onclick="openModal()">+ Add Channel</button>
     </div>
   </div>
 
@@ -104,6 +115,7 @@
     <button class="filter-btn" onclick="filterCat(this,'sports')">Sports</button>
     <button class="filter-btn" onclick="filterCat(this,'news')">News</button>
     <button class="filter-btn" onclick="filterCat(this,'other')">Other</button>
+    <button class="refresh-btn" onclick="refreshAll()">↻ Refresh All</button>
   </div>
 
   <div class="grid-container">
@@ -111,270 +123,442 @@
   </div>
 </div>
 
+<!-- Add Channel Modal -->
 <div class="modal-overlay" id="modal">
   <div class="modal">
-    <h3>Add Stream</h3>
-    <label>Channel Name</label>
-    <input id="f-channel" type="text" placeholder="e.g. Marques Brownlee" />
-    <label>Stream Title</label>
-    <input id="f-title" type="text" placeholder="e.g. New iPhone Review LIVE" />
+    <h3>Add Channel</h3>
+    <p class="modal-subtitle">Paste a YouTube channel URL — streams will be fetched automatically.</p>
+    <label>YouTube Channel URL</label>
+    <input id="f-url" type="text" placeholder="https://youtube.com/@ChannelName" oninput="clearFetchStatus()" />
     <label>Category</label>
     <select id="f-cat">
-      <option value="tech">Tech</option>
       <option value="gaming">Gaming</option>
       <option value="music">Music</option>
+      <option value="tech">Tech</option>
       <option value="sports">Sports</option>
       <option value="news">News</option>
       <option value="other">Other</option>
     </select>
-    <label>Stream URL (YouTube / Twitch / etc.)</label>
-    <input id="f-url" type="text" placeholder="https://youtube.com/watch?v=..." />
-    <label>Start time (minutes from now — use negative if already live)</label>
-    <input id="f-start" type="number" value="-5" />
-    <label>Duration (minutes — use 9999 for 24/7 streams)</label>
-    <input id="f-dur" type="number" value="90" />
+    <div class="fetch-status" id="fetch-status"></div>
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeModal()">Cancel</button>
-      <button class="btn-save" onclick="saveStream()">Add Stream</button>
+      <button class="btn-save" id="btn-add" onclick="addChannel()">Fetch & Add</button>
     </div>
   </div>
 </div>
 
+<div class="toast" id="toast"></div>
+
 <script>
-  const COLORS = {
-    gaming: '#7c3aed',
-    music: '#0369a1',
-    tech: '#047857',
-    sports: '#b45309',
-    news: '#be123c',
-    other: '#475569'
-  };
+const API_KEY = 'AIzaSyD03qfbIFEi_sO6kbew_usxW5oKaSDO7R4';
 
-  const now = () => new Date();
-  const addMin = (base, m) => new Date(new Date(base).getTime() + m * 60000);
+const COLORS = {
+  gaming: '#7c3aed', music: '#0369a1', tech: '#047857',
+  sports: '#b45309', news: '#be123c', other: '#475569'
+};
 
-  let activeFilter = 'all';
-  let nextId = 1000;
+const now = () => new Date();
+const addMin = (base, m) => new Date(new Date(base).getTime() + m * 60000);
+const WINDOW_MINUTES = 300;
+const SLOT_MINUTES = 60;
+const NUM_SLOTS = WINDOW_MINUTES / SLOT_MINUTES;
 
-  // ── Edit your favourite channels here ──────────────────────────────────────
-  let channels = [
-    {
-      id: 1, name: 'LinusTechTips', category: 'tech',
-      streams: [
-        { id: 101, title: 'GPU Showdown 2025', url: 'https://youtube.com/@LinusTechTips', start: addMin(now(), -35), dur: 120 }
-      ]
-    },
-    {
-      id: 2, name: 'Pokimane', category: 'gaming',
-      streams: [
-        { id: 201, title: 'Valorant Ranked Grind', url: 'https://twitch.tv/pokimane', start: addMin(now(), -10), dur: 180 },
-        { id: 202, title: 'Minecraft w/ Friends', url: 'https://twitch.tv/pokimane', start: addMin(now(), 110), dur: 120 }
-      ]
-    },
-    {
-      id: 3, name: 'Lofi Girl', category: 'music',
-      streams: [
-        { id: 301, title: 'lofi hip hop — beats to relax/study', url: 'https://youtube.com/@LofiGirl', start: addMin(now(), -720), dur: 9999 }
-      ]
-    },
-    {
-      id: 4, name: 'Mark Rober', category: 'tech',
-      streams: [
-        { id: 401, title: "World's Largest Trebuchet Build", url: 'https://youtube.com/@MarkRober', start: addMin(now(), 45), dur: 90 }
-      ]
-    },
-    {
-      id: 5, name: 'ESPN', category: 'sports',
-      streams: [
-        { id: 501, title: 'NBA Highlights Live', url: 'https://youtube.com/@ESPN', start: addMin(now(), -20), dur: 60 },
-        { id: 502, title: 'College Football Preview', url: 'https://youtube.com/@ESPN', start: addMin(now(), 60), dur: 90 }
-      ]
-    },
-    {
-      id: 6, name: 'DW News', category: 'news',
-      streams: [
-        { id: 601, title: 'World News Live 24/7', url: 'https://youtube.com/@dwnews', start: addMin(now(), -600), dur: 9999 }
-      ]
-    },
-    {
-      id: 7, name: 'Ludwig', category: 'gaming',
-      streams: [
-        { id: 701, title: 'Chess Tournament Hosted by Ludwig', url: 'https://youtube.com/@ludwig', start: addMin(now(), 20), dur: 240 }
-      ]
-    }
+let activeFilter = 'all';
+let nextId = 1000;
+
+// Load saved channels from localStorage
+let channels = JSON.parse(localStorage.getItem('sg_channels') || '[]');
+// Restore Date objects
+channels.forEach(ch => ch.streams.forEach(s => { s.start = new Date(s.start); }));
+
+function saveChannels() {
+  localStorage.setItem('sg_channels', JSON.stringify(channels));
+}
+
+// ── YouTube API helpers ────────────────────────────────────────────────────
+
+async function resolveChannelId(url) {
+  // Extract handle or channel id from URL
+  url = url.trim().replace(/\/$/, '');
+  let handle = null, channelId = null;
+
+  const handleMatch = url.match(/@([\w.-]+)/);
+  const idMatch = url.match(/channel\/(UC[\w-]+)/);
+  const userMatch = url.match(/\/user\/([\w.-]+)/);
+
+  if (idMatch) return idMatch[1];
+
+  if (handleMatch) handle = handleMatch[1];
+  else if (userMatch) handle = userMatch[1];
+  else {
+    // Maybe they just typed a handle without URL
+    const bare = url.replace(/^@/, '');
+    if (bare.length > 0) handle = bare;
+  }
+
+  if (!handle) throw new Error('Could not parse channel URL. Try: https://youtube.com/@ChannelName');
+
+  // Use search to resolve handle → channelId
+  const res = await fetch(
+    `https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&q=${encodeURIComponent(handle)}&maxResults=1&key=${API_KEY}`
+  );
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.message);
+  if (!data.items || !data.items.length) throw new Error('Channel not found: ' + handle);
+  return data.items[0].snippet.channelId;
+}
+
+async function fetchChannelName(channelId) {
+  const res = await fetch(
+    `https://www.googleapis.com/youtube/v3/channels?part=snippet&id=${channelId}&key=${API_KEY}`
+  );
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.message);
+  if (!data.items || !data.items.length) throw new Error('Channel details not found');
+  return data.items[0].snippet.title;
+}
+
+async function fetchStreams(channelId) {
+  const streams = [];
+  const now24 = new Date();
+  const after = new Date(now24.getTime() - 4 * 60 * 60 * 1000).toISOString(); // 4h ago
+  const before = new Date(now24.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString(); // 7 days ahead
+
+  // Fetch live
+  const liveRes = await fetch(
+    `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&eventType=live&type=video&maxResults=5&key=${API_KEY}`
+  );
+  const liveData = await liveRes.json();
+  if (liveData.error) throw new Error(liveData.error.message);
+
+  // Fetch upcoming
+  const upRes = await fetch(
+    `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&eventType=upcoming&type=video&maxResults=10&publishedBefore=${before}&key=${API_KEY}`
+  );
+  const upData = await upRes.json();
+  if (upData.error) throw new Error(upData.error.message);
+
+  const allItems = [
+    ...(liveData.items || []).map(i => ({ ...i, _type: 'live' })),
+    ...(upData.items || []).map(i => ({ ...i, _type: 'upcoming' }))
   ];
-  // ── End of channel list ────────────────────────────────────────────────────
 
-  const WINDOW_MINUTES = 300;
-  const SLOT_MINUTES = 60;
-  const NUM_SLOTS = WINDOW_MINUTES / SLOT_MINUTES;
+  if (!allItems.length) return [];
 
-  function getWindowStart() {
-    const n = now(); n.setMinutes(0, 0, 0); return n;
-  }
+  // Get video details for durations and start times
+  const ids = allItems.map(i => i.id.videoId).filter(Boolean).join(',');
+  const detailRes = await fetch(
+    `https://www.googleapis.com/youtube/v3/videos?part=snippet,liveStreamingDetails,contentDetails&id=${ids}&key=${API_KEY}`
+  );
+  const detailData = await detailRes.json();
+  if (detailData.error) throw new Error(detailData.error.message);
 
-  function statusOf(s) {
-    const n = now(), end = addMin(s.start, s.dur);
-    if (s.start <= n && end > n) return 'live';
-    if (s.start > n) return 'upcoming';
-    return 'ended';
-  }
+  (detailData.items || []).forEach(v => {
+    const lsd = v.liveStreamingDetails;
+    if (!lsd) return;
 
-  function fmtTime(d) {
-    return new Date(d).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  }
+    let startTime = lsd.actualStartTime || lsd.scheduledStartTime;
+    if (!startTime) return;
+    startTime = new Date(startTime);
 
-  function countdown(s) {
-    const n = now(), st = statusOf(s);
-    if (st === 'live') {
-      if (s.dur >= 9000) return 'LIVE 24/7';
-      const diff = Math.max(0, Math.round((addMin(s.start, s.dur) - n) / 60000));
-      return diff + 'm left';
+    // Estimate duration: use actualEndTime if ended, else default 2h for live, 3h for upcoming
+    let durMin = 120;
+    if (lsd.actualEndTime) {
+      durMin = Math.round((new Date(lsd.actualEndTime) - startTime) / 60000);
     }
-    if (st === 'upcoming') {
-      const diff = Math.round((new Date(s.start) - n) / 60000);
-      return diff < 60 ? 'in ' + diff + 'm' : 'in ' + Math.floor(diff/60) + 'h ' + (diff%60) + 'm';
-    }
-    return 'ended';
-  }
 
-  function calcLeft(s, ws) {
-    const total = WINDOW_MINUTES * 60000;
-    return Math.max(0, (new Date(s.start) - ws) / total * 100);
-  }
-
-  function calcWidth(s, ws) {
-    const total = WINDOW_MINUTES * 60000;
-    const winEnd = addMin(ws, WINDOW_MINUTES);
-    const sS = Math.max(new Date(s.start), ws);
-    const sE = Math.min(addMin(s.start, s.dur), winEnd);
-    const dur = sE - sS;
-    return dur <= 0 ? 0 : (dur / total * 100);
-  }
-
-  function esc(s) {
-    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  }
-
-  function renderGrid() {
-    const grid = document.getElementById('guide-grid');
-    const ws = getWindowStart();
-    const winEnd = addMin(ws, WINDOW_MINUTES);
-    let html = '<div class="time-header-row"><div class="channel-col-header">Channel</div><div class="time-slots-header">';
-    for (let i = 0; i < NUM_SLOTS; i++) {
-      html += `<div class="time-slot-label">${fmtTime(addMin(ws, i * SLOT_MINUTES))}</div>`;
-    }
-    html += '</div></div>';
-
-    const filtered = activeFilter === 'all' ? channels : channels.filter(c => c.category === activeFilter);
-
-    filtered.forEach(ch => {
-      const visible = ch.streams.filter(s => {
-        const end = addMin(s.start, s.dur);
-        return new Date(s.start) < winEnd && end > ws;
-      });
-      html += `<div class="channel-row">
-        <div class="channel-info">
-          <div class="channel-name">${esc(ch.name)}</div>
-          <div class="channel-category">${esc(ch.category)}</div>
-        </div>
-        <div class="programs-row">`;
-
-      if (visible.length === 0) {
-        html += `<div class="empty-row"><div class="empty-msg">No streams scheduled</div></div>`;
-      } else {
-        visible.forEach(s => {
-          const left = calcLeft(s, ws);
-          const width = calcWidth(s, ws);
-          if (width < 0.5) return;
-          const st = statusOf(s);
-          const col = COLORS[ch.category] || COLORS.other;
-          const bClass = st === 'live' ? 'badge-live' : st === 'upcoming' ? 'badge-soon' : 'badge-ended';
-          const bText = st === 'live' ? 'LIVE' : st === 'upcoming' ? 'SOON' : 'ENDED';
-          html += `<a class="program-block ${st === 'live' ? 'on-now' : st}"
-            style="left:${left.toFixed(2)}%;width:${width.toFixed(2)}%;background:${col}22;border-color:${col}66;"
-            href="${esc(s.url)}" target="_blank" rel="noopener"
-            title="${esc(s.title)} — ${esc(ch.name)}">
-            <div class="prog-title" style="color:${col}cc">${esc(s.title)}</div>
-            <div class="prog-meta">
-              <span class="prog-time">${fmtTime(s.start)}</span>
-              <span class="prog-badge ${bClass}">${bText}</span>
-            </div>
-            ${st !== 'ended' ? `<div class="countdown" style="color:${col}cc" id="cd-${s.id}">${countdown(s)}</div>` : ''}
-          </a>`;
-        });
-        const nowOff = (now() - ws) / (WINDOW_MINUTES * 60000) * 100;
-        if (nowOff >= 0 && nowOff <= 100) {
-          html += `<div class="now-line" style="left:${nowOff.toFixed(2)}%"></div>`;
-        }
-      }
-      html += `</div></div>`;
+    streams.push({
+      id: ++nextId,
+      title: v.snippet.title,
+      url: `https://youtube.com/watch?v=${v.id}`,
+      start: startTime,
+      dur: durMin
     });
-    grid.innerHTML = html;
-    renderOnNow();
-  }
-
-  function renderOnNow() {
-    const chips = document.getElementById('on-now-chips');
-    const live = [];
-    channels.forEach(ch => ch.streams.forEach(s => {
-      if (statusOf(s) === 'live') live.push({ ch, s });
-    }));
-    if (!live.length) {
-      chips.innerHTML = '<span style="font-size:11px;color:#6060a0;">Nothing live right now</span>';
-      return;
-    }
-    chips.innerHTML = live.map(({ ch, s }) =>
-      `<a class="on-now-chip" href="${esc(s.url)}" target="_blank" rel="noopener">
-        <span class="live-dot" style="width:7px;height:7px;flex-shrink:0;"></span>
-        <span>${esc(ch.name)}: ${esc(s.title.length > 28 ? s.title.slice(0,28)+'…' : s.title)}</span>
-      </a>`
-    ).join('');
-  }
-
-  function updateCountdowns() {
-    channels.forEach(ch => ch.streams.forEach(s => {
-      const el = document.getElementById('cd-' + s.id);
-      if (el) el.textContent = countdown(s);
-    }));
-  }
-
-  function filterCat(btn, cat) {
-    activeFilter = cat;
-    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    renderGrid();
-  }
-
-  function openModal() { document.getElementById('modal').classList.add('open'); }
-  function closeModal() { document.getElementById('modal').classList.remove('open'); }
-
-  function saveStream() {
-    const chName = document.getElementById('f-channel').value.trim();
-    const title  = document.getElementById('f-title').value.trim();
-    const cat    = document.getElementById('f-cat').value;
-    const url    = document.getElementById('f-url').value.trim();
-    const startM = parseInt(document.getElementById('f-start').value) || 0;
-    const dur    = parseInt(document.getElementById('f-dur').value) || 60;
-    if (!chName || !title) { alert('Please fill in channel name and stream title.'); return; }
-    let ch = channels.find(c => c.name.toLowerCase() === chName.toLowerCase());
-    if (!ch) { ch = { id: ++nextId, name: chName, category: cat, streams: [] }; channels.push(ch); }
-    ch.streams.push({ id: ++nextId, title, url, start: addMin(now(), startM), dur });
-    closeModal();
-    renderGrid();
-  }
-
-  // Close modal on backdrop click
-  document.getElementById('modal').addEventListener('click', e => {
-    if (e.target === e.currentTarget) closeModal();
   });
 
-  // Boot
+  return streams;
+}
+
+// ── Channel management ─────────────────────────────────────────────────────
+
+async function addChannel() {
+  const url = document.getElementById('f-url').value.trim();
+  const cat = document.getElementById('f-cat').value;
+  if (!url) { setFetchStatus('error', 'Please enter a channel URL.'); return; }
+
+  const btn = document.getElementById('btn-add');
+  btn.disabled = true;
+  btn.textContent = 'Fetching...';
+  setFetchStatus('loading', 'Resolving channel...');
+
+  try {
+    const channelId = await resolveChannelId(url);
+    setFetchStatus('loading', 'Fetching channel name...');
+    const channelName = await fetchChannelName(channelId);
+    setFetchStatus('loading', 'Fetching live & upcoming streams...');
+    const streams = await fetchStreams(channelId);
+
+    // Check if channel already exists
+    let ch = channels.find(c => c.channelId === channelId);
+    if (ch) {
+      ch.streams = streams;
+      ch.category = cat;
+      ch.lastFetched = new Date();
+      setFetchStatus('success', `Updated "${channelName}" — ${streams.length} stream(s) found.`);
+    } else {
+      ch = { id: ++nextId, channelId, name: channelName, category: cat, streams, lastFetched: new Date() };
+      channels.push(ch);
+      setFetchStatus('success', `Added "${channelName}" — ${streams.length} stream(s) found.`);
+    }
+
+    saveChannels();
+    renderGrid();
+    setTimeout(closeModal, 1200);
+  } catch (err) {
+    setFetchStatus('error', 'Error: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Fetch & Add';
+  }
+}
+
+async function refreshChannel(chId) {
+  const ch = channels.find(c => c.id === chId);
+  if (!ch) return;
+  showToast('Refreshing ' + ch.name + '...');
+  try {
+    const streams = await fetchStreams(ch.channelId);
+    ch.streams = streams;
+    ch.lastFetched = new Date();
+    saveChannels();
+    renderGrid();
+    showToast(ch.name + ': ' + streams.length + ' stream(s) updated.');
+  } catch (err) {
+    showToast('Error: ' + err.message);
+  }
+}
+
+function removeChannel(chId) {
+  if (!confirm('Remove this channel from your guide?')) return;
+  channels = channels.filter(c => c.id !== chId);
+  saveChannels();
   renderGrid();
-  setInterval(() => { document.getElementById('clock').textContent = now().toLocaleTimeString(); }, 1000);
-  setInterval(updateCountdowns, 10000);
-  setInterval(renderGrid, 60000);
-  document.getElementById('clock').textContent = now().toLocaleTimeString();
+}
+
+async function refreshAll() {
+  showToast('Refreshing all channels...');
+  for (const ch of channels) {
+    if (!ch.channelId) continue;
+    try {
+      const streams = await fetchStreams(ch.channelId);
+      ch.streams = streams;
+      ch.lastFetched = new Date();
+    } catch (e) { /* skip */ }
+  }
+  saveChannels();
+  renderGrid();
+  showToast('All channels refreshed.');
+}
+
+// ── Grid rendering ─────────────────────────────────────────────────────────
+
+function getWindowStart() {
+  const n = now(); n.setMinutes(0, 0, 0); return n;
+}
+
+function statusOf(s) {
+  const n = now(), end = addMin(s.start, s.dur);
+  if (new Date(s.start) <= n && end > n) return 'live';
+  if (new Date(s.start) > n) return 'upcoming';
+  return 'ended';
+}
+
+function fmtTime(d) {
+  return new Date(d).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+function countdown(s) {
+  const n = now(), st = statusOf(s);
+  if (st === 'live') {
+    if (s.dur >= 9000) return 'LIVE 24/7';
+    const diff = Math.max(0, Math.round((addMin(s.start, s.dur) - n) / 60000));
+    return diff + 'm left';
+  }
+  if (st === 'upcoming') {
+    const diff = Math.round((new Date(s.start) - n) / 60000);
+    return diff < 60 ? 'in ' + diff + 'm' : 'in ' + Math.floor(diff/60) + 'h ' + (diff%60) + 'm';
+  }
+  return 'ended';
+}
+
+function calcLeft(s, ws) {
+  return Math.max(0, (new Date(s.start) - ws) / (WINDOW_MINUTES * 60000) * 100);
+}
+
+function calcWidth(s, ws) {
+  const total = WINDOW_MINUTES * 60000;
+  const winEnd = addMin(ws, WINDOW_MINUTES);
+  const sS = Math.max(new Date(s.start), ws);
+  const sE = Math.min(addMin(s.start, s.dur), winEnd);
+  const dur = sE - sS;
+  return dur <= 0 ? 0 : (dur / total * 100);
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function renderGrid() {
+  const grid = document.getElementById('guide-grid');
+  const ws = getWindowStart();
+  const winEnd = addMin(ws, WINDOW_MINUTES);
+
+  let html = '<div class="time-header-row"><div class="channel-col-header">Channel</div><div class="time-slots-header">';
+  for (let i = 0; i < NUM_SLOTS; i++) {
+    html += `<div class="time-slot-label">${fmtTime(addMin(ws, i * SLOT_MINUTES))}</div>`;
+  }
+  html += '</div></div>';
+
+  const filtered = activeFilter === 'all' ? channels : channels.filter(c => c.category === activeFilter);
+
+  if (!filtered.length) {
+    html += `<div style="padding:40px;text-align:center;color:#3a3a5a;font-size:13px;">
+      No channels added yet. Click <strong style="color:#e94560">+ Add Channel</strong> to get started.
+    </div>`;
+    grid.innerHTML = html;
+    renderOnNow();
+    return;
+  }
+
+  filtered.forEach(ch => {
+    const visible = ch.streams.filter(s => {
+      const end = addMin(s.start, s.dur);
+      return new Date(s.start) < winEnd && end > ws;
+    });
+
+    html += `<div class="channel-row">
+      <div class="channel-info">
+        <div class="channel-name">${esc(ch.name)}</div>
+        <div class="channel-category">${esc(ch.category)}</div>
+        <div class="channel-actions">
+          <button class="ch-btn" onclick="refreshChannel(${ch.id})">↻</button>
+          <button class="ch-btn" onclick="removeChannel(${ch.id})">✕</button>
+        </div>
+      </div>
+      <div class="programs-row">`;
+
+    if (!visible.length) {
+      html += `<div class="empty-row"><div class="empty-msg">No streams in this window</div></div>`;
+    } else {
+      visible.forEach(s => {
+        const left = calcLeft(s, ws);
+        const width = calcWidth(s, ws);
+        if (width < 0.5) return;
+        const st = statusOf(s);
+        const col = COLORS[ch.category] || COLORS.other;
+        const bClass = st === 'live' ? 'badge-live' : st === 'upcoming' ? 'badge-soon' : 'badge-ended';
+        const bText  = st === 'live' ? 'LIVE' : st === 'upcoming' ? 'SOON' : 'ENDED';
+        html += `<a class="program-block ${st === 'live' ? 'on-now' : st}"
+          style="left:${left.toFixed(2)}%;width:${width.toFixed(2)}%;background:${col}22;border-color:${col}66;"
+          href="${esc(s.url)}" target="_blank" rel="noopener"
+          title="${esc(s.title)}">
+          <div class="prog-title" style="color:${col}cc">${esc(s.title)}</div>
+          <div class="prog-meta">
+            <span class="prog-time">${fmtTime(s.start)}</span>
+            <span class="prog-badge ${bClass}">${bText}</span>
+          </div>
+          ${st !== 'ended' ? `<div class="countdown" style="color:${col}cc" id="cd-${s.id}">${countdown(s)}</div>` : ''}
+        </a>`;
+      });
+
+      const nowOff = (now() - ws) / (WINDOW_MINUTES * 60000) * 100;
+      if (nowOff >= 0 && nowOff <= 100) {
+        html += `<div class="now-line" style="left:${nowOff.toFixed(2)}%"></div>`;
+      }
+    }
+
+    html += `</div></div>`;
+  });
+
+  grid.innerHTML = html;
+  renderOnNow();
+}
+
+function renderOnNow() {
+  const chips = document.getElementById('on-now-chips');
+  const live = [];
+  channels.forEach(ch => ch.streams.forEach(s => {
+    if (statusOf(s) === 'live') live.push({ ch, s });
+  }));
+  if (!live.length) {
+    chips.innerHTML = '<span style="font-size:11px;color:#6060a0;">Nothing live right now</span>';
+    return;
+  }
+  chips.innerHTML = live.map(({ ch, s }) =>
+    `<a class="on-now-chip" href="${esc(s.url)}" target="_blank" rel="noopener">
+      <span class="live-dot" style="width:7px;height:7px;flex-shrink:0;"></span>
+      <span>${esc(ch.name)}: ${esc(s.title.length > 30 ? s.title.slice(0,30)+'…' : s.title)}</span>
+    </a>`
+  ).join('');
+}
+
+function updateCountdowns() {
+  channels.forEach(ch => ch.streams.forEach(s => {
+    const el = document.getElementById('cd-' + s.id);
+    if (el) el.textContent = countdown(s);
+  }));
+}
+
+// ── UI helpers ─────────────────────────────────────────────────────────────
+
+function filterCat(btn, cat) {
+  activeFilter = cat;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderGrid();
+}
+
+function openModal() {
+  document.getElementById('f-url').value = '';
+  clearFetchStatus();
+  document.getElementById('modal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+}
+
+function setFetchStatus(type, msg) {
+  const el = document.getElementById('fetch-status');
+  el.className = 'fetch-status ' + type;
+  el.textContent = msg;
+}
+
+function clearFetchStatus() {
+  const el = document.getElementById('fetch-status');
+  el.className = 'fetch-status';
+  el.textContent = '';
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+document.getElementById('modal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeModal();
+});
+
+// ── Boot ───────────────────────────────────────────────────────────────────
+
+renderGrid();
+setInterval(() => { document.getElementById('clock').textContent = now().toLocaleTimeString(); }, 1000);
+setInterval(updateCountdowns, 10000);
+setInterval(renderGrid, 60000);
+document.getElementById('clock').textContent = now().toLocaleTimeString();
 </script>
 </body>
 </html>
