@@ -227,14 +227,14 @@ body{font-family:'Courier New',monospace;background:#07071a;color:#e0e0f0;min-he
   </div>
 </div>
 
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-<script>
+<script type="module">
+import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import{getFirestore,collection,doc,setDoc,deleteDoc,onSnapshot,orderBy,query}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 const ADMIN_PASSWORD='streamguide2025';
 const YT_KEY='AIzaSyD03qfbIFEi_sO6kbew_usxW5oKaSDO7R4';
-firebase.initializeApp({apiKey:"AIzaSyCVcbG2Z510b-4pLv1DYFtei30ZYHVrRh8",authDomain:"streamguide-490519.firebaseapp.com",projectId:"streamguide-490519",storageBucket:"streamguide-490519.firebasestorage.app",messagingSenderId:"294473122830",appId:"1:294473122830:web:60d47950d1b368c3a4a85f"});
-const db=firebase.firestore();
-const col=db.collection('channels');
+const app=initializeApp({apiKey:"AIzaSyCVcbG2Z510b-4pLv1DYFtei30ZYHVrRh8",authDomain:"streamguide-490519.firebaseapp.com",projectId:"streamguide-490519",storageBucket:"streamguide-490519.firebasestorage.app",messagingSenderId:"294473122830",appId:"1:294473122830:web:60d47950d1b368c3a4a85f"});
+const db=getFirestore(app);
+const col=collection(db,'channels');
 
 let isAdmin=false,channels=[],nextId=Date.now(),editingId=null,selectedTags=[];
 let activeTagF=new Set(['all']),activeLangF=new Set(['all']),currentTab='live';
@@ -261,13 +261,13 @@ function updateAdminUI(){
 function setSyncStatus(s,l){document.getElementById('sync-dot').className='sync-dot'+(s?' '+s:'');document.getElementById('sync-label').textContent=l}
 function startSync(){
   setSyncStatus('syncing','connecting...');
-  col.orderBy('name').onSnapshot(snap=>{
-    channels=snap.docs.map(doc=>{
-      const d=doc.data();
+  onSnapshot(query(col,orderBy('name')),snap=>{
+    channels=snap.docs.map(snap2=>{
+      const d=snap2.data();
       const td=v=>v&&v.toDate?v.toDate():new Date(v);
       d.streams=(d.streams||[]).map(s=>({...s,start:td(s.start)}));
       d.videos=(d.videos||[]).map(v=>({...v,publishedAt:td(v.publishedAt)}));
-      return{...d,_docId:doc.id};
+      return{...d,_docId:snap2.id};
     });
     setSyncStatus('connected','synced');
     buildFilters();renderGrid();
@@ -287,7 +287,7 @@ async function saveCh(ch){
   const serialized=serializeForFirestore(data);
   console.log('Saving to Firestore, docId:',docId);
   try{
-    await col.doc(docId).set(serialized);
+    await setDoc(doc(db,'channels',docId),serialized);
     setSyncStatus('connected','synced');
     console.log('Save OK');
   }catch(e){
@@ -296,7 +296,7 @@ async function saveCh(ch){
     showToast(e.code==='permission-denied'?'Permission denied — check Firestore Rules!':'Save error: '+e.message);
   }
 }
-async function deleteCh(ch){try{await col.doc(ch._docId||String(ch.id)).delete()}catch(e){showToast('Delete error: '+e.message)}}
+async function deleteCh(ch){try{await deleteDoc(doc(db,'channels',ch._docId||String(ch.id)))}catch(e){showToast('Delete error: '+e.message)}}
 
 // YouTube
 async function resolveId(url){
@@ -515,6 +515,16 @@ setInterval(()=>{document.getElementById('clock').textContent=now().toLocaleTime
 setInterval(updateCDs,10000);
 setInterval(renderGrid,60000);
 document.getElementById('clock').textContent=now().toLocaleTimeString();
+
+// Expose functions to global scope for onclick handlers
+window.openLogin=openLogin;window.closeLogin=closeLogin;window.checkPassword=checkPassword;
+window.logout=logout;window.switchTab=switchTab;window.toggleFilter=toggleFilter;
+window.openChannelModal=openChannelModal;window.closeChannelModal=closeChannelModal;
+window.submitChannel=submitChannel;window.removeChannel=removeChannel;
+window.refreshChannel=refreshChannel;window.refreshAll=refreshAll;
+window.onTagInput=onTagInput;window.onTagKeydown=onTagKeydown;
+window.showTip=showTip;window.hideTip=hideTip;
+
 </script>
 </body>
 </html>
