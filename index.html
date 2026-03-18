@@ -227,14 +227,10 @@ body{font-family:'Courier New',monospace;background:#07071a;color:#e0e0f0;min-he
   </div>
 </div>
 
-<script type="module">
-import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import{getFirestore,collection,doc,setDoc,deleteDoc,onSnapshot,orderBy,query}from'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+<script>
 const ADMIN_PASSWORD='streamguide2025';
 const YT_KEY='AIzaSyD03qfbIFEi_sO6kbew_usxW5oKaSDO7R4';
-const app=initializeApp({apiKey:"AIzaSyCVcbG2Z510b-4pLv1DYFtei30ZYHVrRh8",authDomain:"streamguide-490519.firebaseapp.com",projectId:"streamguide-490519",storageBucket:"streamguide-490519.firebasestorage.app",messagingSenderId:"294473122830",appId:"1:294473122830:web:60d47950d1b368c3a4a85f"});
-const db=getFirestore(app);
-const col=collection(db,'channels');
+const RTDB='https://streamguide-490519-default-rtdb.firebaseio.com';
 
 let isAdmin=false,channels=[],nextId=Date.now(),editingId=null,selectedTags=[];
 let activeTagF=new Set(['all']),activeLangF=new Set(['all']),currentTab='live';
@@ -259,44 +255,81 @@ function updateAdminUI(){
 
 // Firebase
 function setSyncStatus(s,l){document.getElementById('sync-dot').className='sync-dot'+(s?' '+s:'');document.getElementById('sync-label').textContent=l}
-function startSync(){
+
+// ── Realtime Database REST helpers ──
+async function rtdbGet(){
+  const r=await fetch(RTDB+'/channels.json');
+  if(!r.ok)throw new Error('RTDB read failed: '+r.status);
+  return await r.json();
+}
+async function rtdbSet(id,data){
+  const r=await fetch(RTDB+'/channels/'+id+'.json',{method:'PUT',body:JSON.stringify(data)});
+  if(!r.ok)throw new Error('RTDB write failed: '+r.status);
+  return await r.json();
+}
+async function rtdbDelete(id){
+  const r=await fetch(RTDB+'/channels/'+id+'.json',{method:'DELETE'});
+  if(!r.ok)throw new Error('RTDB delete failed: '+r.status);
+}
+
+function parseChannel(id,d){
+  if(!d)return null;
+  d.streams=(d.streams||[]).map(s=>({...s,start:new Date(s.start)}));
+  d.videos=(d.videos||[]).map(v=>({...v,publishedAt:new Date(v.publishedAt)}));
+  d._docId=id;
+  return d;
+}
+
+function serializeCh(ch){
+  const{_docId,...data}=ch;
+  return{...data,
+    streams:(data.streams||[]).map(s=>({...s,start:new Date(s.start).toISOString()})),
+    videos:(data.videos||[]).map(v=>({...v,publishedAt:new Date(v.publishedAt).toISOString()}))
+  };
+}
+
+async function startSync(){
   setSyncStatus('syncing','connecting...');
-  onSnapshot(query(col,orderBy('name')),snap=>{
-    channels=snap.docs.map(snap2=>{
-      const d=snap2.data();
-      const td=v=>v&&v.toDate?v.toDate():new Date(v);
-      d.streams=(d.streams||[]).map(s=>({...s,start:td(s.start)}));
-      d.videos=(d.videos||[]).map(v=>({...v,publishedAt:td(v.publishedAt)}));
-      return{...d,_docId:snap2.id};
-    });
+  try{
+    const raw=await rtdbGet();
+    channels=raw?Object.entries(raw).map(([id,d])=>parseChannel(id,d)).filter(Boolean).sort((a,b)=>a.name.localeCompare(b.name)):[];
     setSyncStatus('connected','synced');
     buildFilters();renderGrid();
     if(currentTab==='videos')renderVideos();
-  },err=>{setSyncStatus('','offline');showToast('Firebase: '+err.message)});
+  }catch(e){
+    setSyncStatus('','offline');
+    showToast('DB error: '+e.message);
+  }
+  // Poll every 15 seconds for cross-device sync
+  setInterval(async()=>{
+    try{
+      const raw=await rtdbGet();
+      channels=raw?Object.entries(raw).map(([id,d])=>parseChannel(id,d)).filter(Boolean).sort((a,b)=>a.name.localeCompare(b.name)):[];
+      setSyncStatus('connected','synced');
+      buildFilters();renderGrid();
+      if(currentTab==='videos')renderVideos();
+    }catch(e){setSyncStatus('','offline')}
+  },15000);
 }
-function serializeForFirestore(ch){
-  return{...ch,
-    streams:(ch.streams||[]).map(s=>({...s,start:new Date(s.start).toISOString()})),
-    videos:(ch.videos||[]).map(v=>({...v,publishedAt:new Date(v.publishedAt).toISOString()}))
-  };
-}
+
 async function saveCh(ch){
   setSyncStatus('syncing','saving...');
-  const{_docId,...data}=ch;
-  const docId=_docId||String(ch.id);
-  const serialized=serializeForFirestore(data);
-  console.log('Saving to Firestore, docId:',docId);
+  const id=ch._docId||String(ch.id);
   try{
-    await setDoc(doc(db,'channels',docId),serialized);
+    await rtdbSet(id,serializeCh(ch));
+    ch._docId=id;
     setSyncStatus('connected','synced');
-    console.log('Save OK');
+    console.log('Save OK:',id);
   }catch(e){
     setSyncStatus('','error');
-    console.error('Firestore save error:',e);
-    showToast(e.code==='permission-denied'?'Permission denied — check Firestore Rules!':'Save error: '+e.message);
+    showToast('Save error: '+e.message);
+    console.error('Save error:',e);
   }
 }
-async function deleteCh(ch){try{await deleteDoc(doc(db,'channels',ch._docId||String(ch.id)))}catch(e){showToast('Delete error: '+e.message)}}
+async function deleteCh(ch){
+  try{await rtdbDelete(ch._docId||String(ch.id))}
+  catch(e){showToast('Delete error: '+e.message)}
+}
 
 // YouTube
 async function resolveId(url){
