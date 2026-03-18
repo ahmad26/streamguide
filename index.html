@@ -45,7 +45,7 @@ body{font-family:'Courier New',monospace;background:#07071a;color:#e0e0f0;min-he
 .channel-col-header{width:180px;min-width:180px;padding:8px 12px;font-size:11px;color:#6060a0;text-transform:uppercase;letter-spacing:1px;border-right:1px solid #2a2a4a}
 .time-slots-header{display:flex;flex:1}
 .time-slot-label{flex:1;padding:8px 4px;font-size:11px;color:#6060a0;text-align:center;border-right:1px solid #2a2a4a;min-width:90px}
-.channel-row{display:flex;border-bottom:1px solid #2a2a4a;min-height:76px}
+.channel-row{display:flex;border-bottom:1px solid #2a2a4a;min-height:68px}
 .channel-info{width:180px;min-width:180px;background:#0f0f23;border-right:2px solid #2a2a4a;padding:8px 10px;display:flex;flex-direction:column;justify-content:center;gap:3px}
 .channel-name{font-size:13px;font-weight:700;color:#e0e0f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .channel-meta{display:flex;flex-wrap:wrap;gap:3px;margin-top:2px}
@@ -55,7 +55,7 @@ body{font-family:'Courier New',monospace;background:#07071a;color:#e0e0f0;min-he
 .ch-btn{background:transparent;border:1px solid #2a2a4a;color:#6060a0;padding:1px 6px;border-radius:2px;cursor:pointer;font-size:10px;font-family:'Courier New',monospace;transition:all .15s}
 .ch-btn:hover{border-color:#e94560;color:#e94560}
 .programs-row{flex:1;display:flex;position:relative;background:#0a0a1a}
-.program-block{position:absolute;top:5px;bottom:5px;border-radius:3px;padding:5px 7px;overflow:hidden;border:1px solid transparent;transition:all .15s;display:flex;flex-direction:column;justify-content:space-between;text-decoration:none}
+.program-block{position:absolute;height:58px;border-radius:3px;padding:5px 7px;overflow:hidden;border:1px solid transparent;transition:all .15s;display:flex;flex-direction:column;justify-content:space-between;text-decoration:none}
 .program-block:hover{filter:brightness(1.2);border-color:rgba(255,255,255,.3);z-index:5}
 .program-block.on-now{box-shadow:0 0 0 2px #e94560;z-index:3}
 .program-block.upcoming{opacity:.75}
@@ -467,6 +467,22 @@ function statusOf(s){const n=now(),e=addMin(s.start,s.dur);if(new Date(s.start)<
 function fmtT(d){return new Date(d).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}
 function fmtD(d){return new Date(d).toLocaleDateString([],{month:'short',day:'numeric'})}
 function cd(s){const n=now(),st=statusOf(s);if(st==='live'){if(s.dur>=9000)return'LIVE 24/7';return Math.max(0,Math.round((addMin(s.start,s.dur)-n)/6e4))+'m left'}if(st==='upcoming'){const d=Math.round((new Date(s.start)-n)/6e4);return d<60?'in '+d+'m':'in '+Math.floor(d/60)+'h '+(d%60)+'m'}return'ended'}
+
+// Assign overlapping streams to separate vertical lanes
+function assignLanes(streams){
+  const lanes=[];
+  streams.forEach(s=>{
+    let placed=false;
+    for(let i=0;i<lanes.length;i++){
+      const last=lanes[i][lanes[i].length-1];
+      if(new Date(s.start)>=addMin(last.start,last.dur)){
+        lanes[i].push(s);s._lane=i;placed=true;break;
+      }
+    }
+    if(!placed){lanes.push([s]);s._lane=lanes.length-1;}
+  });
+  return lanes.length;
+}
 function calcL(t,ws){return Math.max(0,(new Date(t)-ws)/(WMIN*6e4)*100)}
 function calcW(s,ws){const total=WMIN*6e4,we=addMin(ws,WMIN),sS=Math.max(new Date(s.start),ws),sE=Math.min(addMin(s.start,s.dur),we),d=sE-sS;return d<=0?0:d/total*100}
 
@@ -488,13 +504,18 @@ function renderGrid(){
       <button class="ch-btn" onclick="openChannelModal(${ch.id})" title="Edit">&#x270E;</button>
       <button class="ch-btn" onclick="removeChannel(${ch.id})" title="Remove">&#x2715;</button>
     </div>`:'';
-    h+=`<div class="channel-row"><div class="channel-info"><div class="channel-name">${esc(ch.name)}</div><div class="channel-meta">${lang}${tags}</div>${adm}</div><div class="programs-row">`;
+    const numLanes=vs.length>0?assignLanes(vs):1;
+    const LANE_H=62, LANE_PAD=4;
+    const rowH=Math.max(68, numLanes*LANE_H + LANE_PAD);
+    h+=`<div class="channel-row" style="min-height:${rowH}px"><div class="channel-info"><div class="channel-name">${esc(ch.name)}</div><div class="channel-meta">${lang}${tags}</div>${adm}</div><div class="programs-row" style="min-height:${rowH}px">`;
     if(!vs.length&&!vv.length){h+=`<div class="empty-row"><div class="empty-msg">No content in this window</div></div>`}
     else{
       vs.forEach(s=>{
         const left=calcL(s.start,ws),w=calcW(s,ws);if(w<0.5)return;
+        const lane=s._lane||0;
+        const topPx=LANE_PAD + lane*LANE_H;
         const st=statusOf(s),bc=st==='live'?'badge-live':st==='upcoming'?'badge-soon':'badge-ended',bt=st==='live'?'LIVE':st==='upcoming'?'SOON':'ENDED';
-        h+=`<a class="program-block ${st==='live'?'on-now':st}" style="left:${left.toFixed(2)}%;width:${w.toFixed(2)}%;background:${col}22;border-color:${col}66;" href="${esc(s.url)}" target="_blank" rel="noopener" title="${esc(s.title)}">
+        h+=`<a class="program-block ${st==='live'?'on-now':st}" style="left:${left.toFixed(2)}%;width:${w.toFixed(2)}%;top:${topPx}px;height:${LANE_H-LANE_PAD*2}px;background:${col}22;border-color:${col}66;" href="${esc(s.url)}" target="_blank" rel="noopener" title="${esc(s.title)}">
           <div class="prog-title" style="color:${col}cc">${esc(s.title)}</div>
           <div class="prog-meta"><span class="prog-time">${fmtT(s.start)}</span><span class="prog-badge ${bc}">${bt}</span></div>
           ${st!=='ended'?`<div class="countdown" style="color:${col}cc" id="cd-${s.id}">${cd(s)}</div>`:''}
