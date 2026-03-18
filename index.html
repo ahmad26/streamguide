@@ -277,7 +277,10 @@ async function rtdbDelete(id){
 
 function parseChannel(id,d){
   if(!d)return null;
-  d.streams=(d.streams||[]).map(s=>({...s,start:new Date(s.start)}));
+  d.streams=(d.streams||[]).map(s=>{
+    const start=new Date(s.start);
+    return{...s,start:isNaN(start)?new Date():start};
+  }).filter(s=>!isNaN(s.start));
   d.videos=(d.videos||[]).map(v=>({...v,publishedAt:new Date(v.publishedAt)}));
   d._docId=id;
   return d;
@@ -402,10 +405,11 @@ function toggleFilter(btn){
   renderGrid();
 }
 function hasActiveStreams(ch){
-  const ws=winStart(),we=addMin(ws,WMIN);
   return (ch.streams||[]).some(s=>{
     const st=statusOf(s);
-    return (st==='live'||st==='upcoming') && new Date(s.start)<we && addMin(s.start,s.dur)>ws;
+    if(st==='live') return true;
+    if(st==='upcoming' && new Date(s.start)<=addMin(now(),WMIN)) return true;
+    return false;
   });
 }
 function chVisible(ch){
