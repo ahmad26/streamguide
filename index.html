@@ -227,14 +227,9 @@ body{font-family:'Courier New',monospace;background:#07071a;color:#e0e0f0;min-he
   </div>
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <script>
-var firebaseAppReady=false,firebaseFirestoreReady=false;
-function tryInit(){if(!firebaseAppReady||!firebaseFirestoreReady)return;initApp();}
-</script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js" onload="firebaseAppReady=true;tryInit()"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js" onload="firebaseFirestoreReady=true;tryInit()"></script>
-<script>
-function initApp(){
 const ADMIN_PASSWORD='streamguide2025';
 const YT_KEY='AIzaSyD03qfbIFEi_sO6kbew_usxW5oKaSDO7R4';
 firebase.initializeApp({apiKey:"AIzaSyCVcbG2Z510b-4pLv1DYFtei30ZYHVrRh8",authDomain:"streamguide-490519.firebaseapp.com",projectId:"streamguide-490519",storageBucket:"streamguide-490519.firebasestorage.app",messagingSenderId:"294473122830",appId:"1:294473122830:web:60d47950d1b368c3a4a85f"});
@@ -499,7 +494,6 @@ setInterval(()=>{document.getElementById('clock').textContent=now().toLocaleTime
 setInterval(updateCDs,10000);
 setInterval(renderGrid,60000);
 document.getElementById('clock').textContent=now().toLocaleTimeString();
-} // end initApp
 </script>
 </body>
 </html>
