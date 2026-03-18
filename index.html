@@ -274,7 +274,28 @@ function startSync(){
     if(currentTab==='videos')renderVideos();
   },err=>{setSyncStatus('','offline');showToast('Firebase: '+err.message)});
 }
-async function saveCh(ch){setSyncStatus('syncing','saving...');const{_docId,...data}=ch;try{await col.doc(_docId||String(ch.id)).set(data)}catch(e){showToast('Save error: '+e.message)}}
+function serializeForFirestore(ch){
+  return{...ch,
+    streams:(ch.streams||[]).map(s=>({...s,start:new Date(s.start).toISOString()})),
+    videos:(ch.videos||[]).map(v=>({...v,publishedAt:new Date(v.publishedAt).toISOString()}))
+  };
+}
+async function saveCh(ch){
+  setSyncStatus('syncing','saving...');
+  const{_docId,...data}=ch;
+  const docId=_docId||String(ch.id);
+  const serialized=serializeForFirestore(data);
+  console.log('Saving to Firestore, docId:',docId);
+  try{
+    await col.doc(docId).set(serialized);
+    setSyncStatus('connected','synced');
+    console.log('Save OK');
+  }catch(e){
+    setSyncStatus('','error');
+    console.error('Firestore save error:',e);
+    showToast(e.code==='permission-denied'?'Permission denied — check Firestore Rules!':'Save error: '+e.message);
+  }
+}
 async function deleteCh(ch){try{await col.doc(ch._docId||String(ch.id)).delete()}catch(e){showToast('Delete error: '+e.message)}}
 
 // YouTube
