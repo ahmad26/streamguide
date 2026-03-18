@@ -486,7 +486,14 @@ function assignLanes(streams){
   return lanes.length;
 }
 function calcL(t,ws){return Math.max(0,(new Date(t)-ws)/(WMIN*6e4)*100)}
-function calcW(s,ws){const total=WMIN*6e4,we=addMin(ws,WMIN),sS=Math.max(new Date(s.start),ws),sE=Math.min(addMin(s.start,s.dur),we),d=sE-sS;return d<=0?0:d/total*100}
+function calcW(s,ws){
+  const total=WMIN*6e4,we=addMin(ws,WMIN);
+  const sS=Math.max(new Date(s.start),ws);
+  // for live streams use at least now+30min as end so block is always visible
+  const estEnd=statusOf(s)==='live'?addMin(now(),30):addMin(s.start,s.dur);
+  const sE=Math.min(estEnd,we);
+  const d=sE-sS;return d<=0?0:d/total*100;
+}
 
 function renderGrid(){
   const grid=document.getElementById('guide-grid'),ws=winStart(),we=addMin(ws,WMIN);
@@ -497,7 +504,11 @@ function renderGrid(){
   if(!fil.length){h+=`<div style="padding:40px;text-align:center;color:#3a3a5a;font-size:13px;">No live or upcoming streams match the current filters.</div>`;grid.innerHTML=h;return}
   fil.forEach(ch=>{
     const col=getColor(ch);
-    const vs=ch.streams.filter(s=>new Date(s.start)<we&&addMin(s.start,s.dur)>ws);
+    const vs=ch.streams.filter(s=>{
+      const st=statusOf(s);
+      if(st==='live') return true; // always show currently live streams
+      return new Date(s.start)<we&&addMin(s.start,s.dur)>ws;
+    });
     const tags=(ch.tags||[]).map(t=>`<span class="tag-badge">${esc(t)}</span>`).join('');
     const lang=ch.language?`<span class="lang-badge">${esc(ch.language)}</span>`:'';
     const adm=isAdmin?`<div class="channel-actions">
