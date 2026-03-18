@@ -360,6 +360,7 @@ async function fetchStreams(id){
   ]);
   const[ld,ud]=await Promise.all([lr.json(),ur.json()]);
   if(ld.error)throw new Error(ld.error.message);if(ud.error)throw new Error(ud.error.message);
+  const liveIds=new Set((ld.items||[]).map(i=>i.id.videoId).filter(Boolean));
   const all=[...(ld.items||[]),...(ud.items||[])];if(!all.length)return[];
   const ids=[...new Set(all.map(i=>i.id.videoId).filter(Boolean))].join(',');
   const dr=await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet,liveStreamingDetails&id=${ids}&key=${YT_KEY}`);
@@ -368,8 +369,10 @@ async function fetchStreams(id){
     const lsd=v.liveStreamingDetails;if(!lsd)return[];
     const st=lsd.actualStartTime||lsd.scheduledStartTime;if(!st)return[];
     const start=new Date(st);
-    const dur=lsd.actualEndTime?Math.round((new Date(lsd.actualEndTime)-start)/6e4):120;
-    return[{id:++nextId,title:v.snippet.title,url:`https://youtube.com/watch?v=${v.id}`,start,dur}];
+    // liveNow=true means YouTube confirmed it as currently live - never treat as ended
+    const liveNow=liveIds.has(v.id)||(!lsd.actualEndTime&&!!lsd.actualStartTime);
+    const dur=lsd.actualEndTime?Math.round((new Date(lsd.actualEndTime)-start)/6e4):9999;
+    return[{id:++nextId,title:v.snippet.title,url:`https://youtube.com/watch?v=${v.id}`,start,dur,liveNow}];
   });
 }
 
@@ -465,7 +468,7 @@ async function refreshAll(){
 // Grid
 function getColor(ch){const p=['#7c3aed','#0369a1','#047857','#b45309','#be123c','#0891b2','#9333ea','#c2410c'];if(ch.tags&&ch.tags[0]){let h=0;for(const c of ch.tags[0])h=((h<<5)-h)+c.charCodeAt(0);return p[Math.abs(h)%p.length]}return'#475569'}
 function winStart(){const n=now();n.setMinutes(0,0,0);return n}
-function statusOf(s){const n=now(),e=addMin(s.start,s.dur);if(new Date(s.start)<=n&&e>n)return'live';if(new Date(s.start)>n)return'upcoming';return'ended'}
+function statusOf(s){const n=now();if(s.liveNow)return'live';const e=addMin(s.start,s.dur);if(new Date(s.start)<=n&&e>n)return'live';if(new Date(s.start)>n)return'upcoming';return'ended'}
 function fmtT(d){return new Date(d).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}
 function fmtD(d){return new Date(d).toLocaleDateString([],{month:'short',day:'numeric'})}
 function cd(s){const n=now(),st=statusOf(s);if(st==='live'){if(s.dur>=9000)return'LIVE 24/7';return Math.max(0,Math.round((addMin(s.start,s.dur)-n)/6e4))+'m left'}if(st==='upcoming'){const d=Math.round((new Date(s.start)-n)/6e4);return d<60?'in '+d+'m':'in '+Math.floor(d/60)+'h '+(d%60)+'m'}return'ended'}
