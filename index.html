@@ -22,14 +22,6 @@ body{font-family:'Courier New',monospace;background:#07071a;color:#e0e0f0;min-he
 .hdr-btn:hover{border-color:#e94560;color:#e94560}
 .hdr-btn.primary{background:#e94560;border-color:#e94560;color:#fff}
 .hdr-btn.primary:hover{background:#c73550}
-.on-now-banner{background:#1a0810;border-bottom:1px solid #e94560;padding:7px 20px;display:flex;gap:10px;align-items:center;overflow-x:auto;min-height:36px}
-.on-now-label{font-size:10px;color:#e94560;text-transform:uppercase;letter-spacing:2px;font-weight:700;white-space:nowrap}
-.on-now-chip{background:#2a0815;border:1px solid #e94560;border-radius:3px;padding:3px 9px;color:#e0e0f0;font-size:11px;white-space:nowrap;display:flex;align-items:center;gap:5px;text-decoration:none;transition:background .15s}
-.on-now-chip:hover{background:#e94560}
-.tabs{background:#16213e;border-bottom:2px solid #2a2a4a;display:flex}
-.tab{padding:10px 24px;font-size:12px;cursor:pointer;color:#6060a0;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s;letter-spacing:1px;text-transform:uppercase}
-.tab.active{color:#e94560;border-bottom-color:#e94560}
-.tab:hover:not(.active){color:#a0a0c0}
 .toolbar{background:#16213e;padding:8px 20px;display:flex;gap:8px;align-items:center;border-bottom:1px solid #2a2a4a;flex-wrap:wrap}
 .filter-pill{background:transparent;border:1px solid #3a3a5a;color:#a0a0c0;padding:3px 10px;border-radius:20px;cursor:pointer;font-size:11px;font-family:'Courier New',monospace;transition:all .15s;white-space:nowrap}
 .filter-pill.active{background:#e94560;border-color:#e94560;color:#fff}
@@ -70,23 +62,8 @@ body{font-family:'Courier New',monospace;background:#07071a;color:#e0e0f0;min-he
 .countdown{font-size:10px;color:rgba(255,255,255,.85);font-weight:700}
 .now-line{position:absolute;top:0;bottom:0;width:2px;background:#e94560;z-index:8;pointer-events:none}
 .now-line::before{content:'';position:absolute;top:0;left:-4px;width:10px;height:10px;background:#e94560;border-radius:50%}
-.video-marker{position:absolute;top:50%;transform:translateY(-50%);width:14px;height:14px;border-radius:2px;background:#f0a50033;border:1px solid #f0a500;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:4;transition:all .15s;text-decoration:none}
-.video-marker:hover{background:#f0a50066;z-index:9}
-.video-marker svg{width:8px;height:8px;fill:#f0a500}
 .empty-row{flex:1;display:flex;align-items:center;padding-left:12px}
 .empty-msg{font-size:11px;color:#3a3a5a;font-style:italic}
-.videos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;padding:20px}
-.video-card{background:#0f0f23;border:1px solid #2a2a4a;border-radius:4px;overflow:hidden;text-decoration:none;transition:all .15s;display:flex;flex-direction:column}
-.video-card:hover{border-color:#e94560;transform:translateY(-2px)}
-.video-thumb{width:100%;aspect-ratio:16/9;background:#1a1a2e;object-fit:cover;display:block}
-.video-thumb-placeholder{width:100%;aspect-ratio:16/9;background:#1a1a2e;display:flex;align-items:center;justify-content:center}
-.video-thumb-placeholder svg{width:32px;height:32px;fill:#3a3a5a}
-.video-info{padding:10px 12px;flex:1;display:flex;flex-direction:column;gap:5px}
-.video-title{font-size:12px;font-weight:700;color:#e0e0f0;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.video-channel{font-size:11px;color:#a0a0c0}
-.video-date{font-size:10px;color:#6060a0}
-.video-footer{display:flex;gap:4px;flex-wrap:wrap;padding:6px 12px 10px}
-.no-videos{padding:40px;text-align:center;color:#3a3a5a;font-size:13px}
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:100;align-items:center;justify-content:center}
 .modal-overlay.open{display:flex}
 .modal{background:#1a1a2e;border:1px solid #3a3a5a;border-radius:6px;padding:22px;width:420px;max-width:95vw;max-height:90vh;overflow-y:auto}
@@ -145,7 +122,7 @@ body{font-family:'Courier New',monospace;background:#07071a;color:#e0e0f0;min-he
 <div class="modal-overlay" id="modal-channel">
   <div class="modal">
     <h3 id="modal-ch-title">Add Channel</h3>
-    <p class="modal-subtitle">Paste a YouTube channel URL — streams and recent videos will be fetched automatically.</p>
+    <p class="modal-subtitle">Paste a YouTube channel URL — live and upcoming streams will be fetched automatically.</p>
     <label>YouTube Channel URL</label>
     <input id="f-url" type="text" placeholder="https://youtube.com/@ChannelName" oninput="clearFetchStatus()"/>
     <label>Language</label>
@@ -217,10 +194,6 @@ body{font-family:'Courier New',monospace;background:#07071a;color:#e0e0f0;min-he
   </div>
 </div>
 
-<div id="vid-tooltip" style="display:none;position:fixed;z-index:50;background:#1a1a2e;border:1px solid #f0a500;border-radius:4px;padding:8px 12px;max-width:220px;font-size:11px;pointer-events:none">
-  <div id="vid-tip-title" style="color:#e0e0f0;font-weight:700;margin-bottom:3px"></div>
-  <div id="vid-tip-date" style="color:#f0a500"></div>
-</div>
 
 <div class="toast" id="toast"></div>
 
@@ -237,15 +210,7 @@ body{font-family:'Courier New',monospace;background:#07071a;color:#e0e0f0;min-he
     </div>
   </div>
 
-  <div class="on-now-banner">
-    <div class="on-now-label">On Now</div>
-    <div id="on-now-chips" style="display:flex;gap:8px;flex-wrap:nowrap"></div>
-  </div>
 
-  <div class="tabs">
-    <div class="tab active" onclick="switchTab('live',this)">Live Schedule</div>
-    <div class="tab" onclick="switchTab('videos',this)">Recent Videos</div>
-  </div>
 
   <div class="toolbar">
     <span style="font-size:10px;color:#6060a0;text-transform:uppercase;letter-spacing:1px;white-space:nowrap">Tags:</span>
@@ -262,9 +227,6 @@ body{font-family:'Courier New',monospace;background:#07071a;color:#e0e0f0;min-he
 
   <div id="tab-live">
     <div class="grid-container"><div class="guide-grid" id="guide-grid"></div></div>
-  </div>
-  <div id="tab-videos" style="display:none">
-    <div class="videos-grid" id="videos-grid"></div>
   </div>
 </div>
 
@@ -336,7 +298,6 @@ async function startSync(){
     channels=raw?Object.entries(raw).map(([id,d])=>parseChannel(id,d)).filter(Boolean).sort((a,b)=>a.name.localeCompare(b.name)):[];
     setSyncStatus('connected','synced');
     buildFilters();renderGrid();
-    if(currentTab==='videos')renderVideos();
   }catch(e){
     setSyncStatus('','offline');
     showToast('DB error: '+e.message);
@@ -348,8 +309,7 @@ async function startSync(){
       channels=raw?Object.entries(raw).map(([id,d])=>parseChannel(id,d)).filter(Boolean).sort((a,b)=>a.name.localeCompare(b.name)):[];
       setSyncStatus('connected','synced');
       buildFilters();renderGrid();
-      if(currentTab==='videos')renderVideos();
-    }catch(e){setSyncStatus('','offline')}
+      }catch(e){setSyncStatus('','offline')}
   },15000);
 }
 
@@ -409,17 +369,6 @@ async function fetchStreams(id){
     return[{id:++nextId,title:v.snippet.title,url:`https://youtube.com/watch?v=${v.id}`,start,dur}];
   });
 }
-async function fetchVideos(id){
-  const after=new Date(now().getTime()-7*864e5).toISOString();
-  const r=await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${id}&type=video&order=date&publishedAfter=${after}&maxResults=20&key=${YT_KEY}`);
-  const d=await r.json();if(d.error)throw new Error(d.error.message);
-  return(d.items||[]).map(v=>({
-    id:v.id.videoId,title:v.snippet.title,
-    url:`https://youtube.com/watch?v=${v.id.videoId}`,
-    thumb:v.snippet.thumbnails?.medium?.url||'',
-    publishedAt:new Date(v.snippet.publishedAt)
-  }));
-}
 
 // Tags input
 function getAllTags(){const s=new Set();channels.forEach(c=>(c.tags||[]).forEach(t=>s.add(t)));return[...s].sort()}
@@ -450,14 +399,22 @@ function toggleFilter(btn){
   const type=btn.dataset.type,val=btn.dataset.val,set=type==='tag'?activeTagF:activeLangF;
   if(val==='all'){set.clear();set.add('all')}else{set.delete('all');if(set.has(val)){set.delete(val);if(!set.size)set.add('all')}else set.add(val)}
   document.querySelectorAll(`[data-type="${type}"]`).forEach(b=>b.classList.toggle('active',set.has(b.dataset.val)));
-  if(currentTab==='live')renderGrid();else renderVideos();
+  renderGrid();
+}
+function hasActiveStreams(ch){
+  const ws=winStart(),we=addMin(ws,WMIN);
+  return (ch.streams||[]).some(s=>{
+    const st=statusOf(s);
+    return (st==='live'||st==='upcoming') && new Date(s.start)<we && addMin(s.start,s.dur)>ws;
+  });
 }
 function chVisible(ch){
-  return(activeTagF.has('all')||(ch.tags||[]).some(t=>activeTagF.has(t)))&&(activeLangF.has('all')||activeLangF.has(ch.language));
+  const tagOk=activeTagF.has('all')||(ch.tags||[]).some(t=>activeTagF.has(t));
+  const langOk=activeLangF.has('all')||activeLangF.has(ch.language);
+  return tagOk&&langOk&&hasActiveStreams(ch);
 }
 
 // Tab
-function switchTab(tab,el){currentTab=tab;document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');document.getElementById('tab-live').style.display=tab==='live'?'':'none';document.getElementById('tab-videos').style.display=tab==='videos'?'':'none';if(tab==='videos')renderVideos()}
 
 // Channel modal
 function openChannelModal(id){
@@ -475,13 +432,13 @@ async function submitChannel(){
   try{
     const channelId=await resolveId(url);
     setFetchStatus('loading','Fetching channel name...');const name=await fetchName(channelId);
-    setFetchStatus('loading','Fetching streams and videos...');
-    const[streams,videos]=await Promise.all([fetchStreams(channelId),fetchVideos(channelId)]);
+    setFetchStatus('loading','Fetching live & upcoming streams...');
+    const streams=await fetchStreams(channelId);const videos=[];
     let ch=editingId?channels.find(c=>c.id===editingId):channels.find(c=>c.channelId===channelId);
     if(ch){ch.streams=streams;ch.videos=videos;ch.language=lang;ch.tags=tags;ch.channelUrl=url;ch.lastFetched=new Date().toISOString()}
     else ch={id:++nextId,channelId,channelUrl:url,name,language:lang,tags,streams,videos,lastFetched:new Date().toISOString()};
     await saveCh(ch);
-    setFetchStatus('success',`"${name}" saved — ${streams.length} stream(s), ${videos.length} video(s).`);
+    setFetchStatus('success',`"${name}" saved — ${streams.length} stream(s) found.`);
     setTimeout(closeChannelModal,1200);
   }catch(e){setFetchStatus('error','Error: '+e.message)}
   finally{btn.disabled=false;btn.textContent=editingId?'Update':'Fetch & Add'}
@@ -492,12 +449,12 @@ async function removeChannel(id){
 }
 async function refreshChannel(id){
   const ch=channels.find(c=>c.id===id);if(!ch)return;showToast('Refreshing '+ch.name+'...');
-  try{const[s,v]=await Promise.all([fetchStreams(ch.channelId),fetchVideos(ch.channelId)]);ch.streams=s;ch.videos=v;ch.lastFetched=new Date().toISOString();await saveCh(ch);showToast(ch.name+' updated.')}
+  try{const s=await fetchStreams(ch.channelId);ch.streams=s;ch.lastFetched=new Date().toISOString();await saveCh(ch);showToast(ch.name+' updated.')}
   catch(e){showToast('Error: '+e.message)}
 }
 async function refreshAll(){
   showToast('Refreshing all...');
-  for(const ch of channels){if(!ch.channelId)continue;try{const[s,v]=await Promise.all([fetchStreams(ch.channelId),fetchVideos(ch.channelId)]);ch.streams=s;ch.videos=v;ch.lastFetched=new Date().toISOString();await saveCh(ch)}catch(e){}}
+  for(const ch of channels){if(!ch.channelId)continue;try{const s=await fetchStreams(ch.channelId);ch.streams=s;ch.lastFetched=new Date().toISOString();await saveCh(ch)}catch(e){}}
   showToast('All channels refreshed.');
 }
 
@@ -533,11 +490,10 @@ function renderGrid(){
   for(let i=0;i<NSLOTS;i++)h+=`<div class="time-slot-label">${fmtT(addMin(ws,i*SMIN))}</div>`;
   h+='</div></div>';
   const fil=channels.filter(chVisible);
-  if(!fil.length){h+=`<div style="padding:40px;text-align:center;color:#3a3a5a;font-size:13px;">No channels match the current filters.</div>`;grid.innerHTML=h;renderOnNow();return}
+  if(!fil.length){h+=`<div style="padding:40px;text-align:center;color:#3a3a5a;font-size:13px;">No live or upcoming streams match the current filters.</div>`;grid.innerHTML=h;return}
   fil.forEach(ch=>{
     const col=getColor(ch);
     const vs=ch.streams.filter(s=>new Date(s.start)<we&&addMin(s.start,s.dur)>ws);
-    const vv=(ch.videos||[]).filter(v=>new Date(v.publishedAt)>=ws&&new Date(v.publishedAt)<we);
     const tags=(ch.tags||[]).map(t=>`<span class="tag-badge">${esc(t)}</span>`).join('');
     const lang=ch.language?`<span class="lang-badge">${esc(ch.language)}</span>`:'';
     const adm=isAdmin?`<div class="channel-actions">
@@ -549,7 +505,7 @@ function renderGrid(){
     const LANE_H=62, LANE_PAD=4;
     const rowH=Math.max(68, numLanes*LANE_H + LANE_PAD);
     h+=`<div class="channel-row" style="min-height:${rowH}px"><div class="channel-info"><div class="channel-name">${esc(ch.name)}</div><div class="channel-meta">${lang}${tags}</div>${adm}</div><div class="programs-row" style="min-height:${rowH}px">`;
-    if(!vs.length&&!vv.length){h+=`<div class="empty-row"><div class="empty-msg">No content in this window</div></div>`}
+    if(!vs.length){h+=`<div class="empty-row"><div class="empty-msg">No streams in this window</div></div>`}
     else{
       vs.forEach(s=>{
         const left=calcL(s.start,ws),w=calcW(s,ws);if(w<0.5)return;
@@ -562,40 +518,18 @@ function renderGrid(){
           ${st!=='ended'?`<div class="countdown" style="color:${col}cc" id="cd-${s.id}">${cd(s)}</div>`:''}
         </a>`;
       });
-      vv.forEach(v=>{
-        const left=calcL(v.publishedAt,ws);
-        h+=`<a class="video-marker" style="left:calc(${left.toFixed(2)}% - 7px)" href="${esc(v.url)}" target="_blank" rel="noopener" onmouseenter="showTip(event,'${esc(v.title)}','${esc(fmtD(v.publishedAt))}')" onmouseleave="hideTip()"><svg viewBox="0 0 16 16"><path d="M6 4l6 4-6 4z"/></svg></a>`;
-      });
+
       const no=(now()-ws)/(WMIN*6e4)*100;if(no>=0&&no<=100)h+=`<div class="now-line" style="left:${no.toFixed(2)}%"></div>`;
     }
     h+=`</div></div>`;
   });
-  grid.innerHTML=h;renderOnNow();
+  grid.innerHTML=h;
 }
 
-function renderOnNow(){
-  const chips=document.getElementById('on-now-chips'),live=[];
-  channels.filter(chVisible).forEach(ch=>ch.streams.forEach(s=>{if(statusOf(s)==='live')live.push({ch,s})}));
-  if(!live.length){chips.innerHTML='<span style="font-size:11px;color:#6060a0;">Nothing live right now</span>';return}
-  chips.innerHTML=live.map(({ch,s})=>`<a class="on-now-chip" href="${esc(s.url)}" target="_blank" rel="noopener"><span class="live-dot" style="width:7px;height:7px;flex-shrink:0"></span><span>${esc(ch.name)}: ${esc(s.title.length>28?s.title.slice(0,28)+'…':s.title)}</span></a>`).join('');
-}
 
 function updateCDs(){channels.forEach(ch=>ch.streams.forEach(s=>{const e=document.getElementById('cd-'+s.id);if(e)e.textContent=cd(s)}))}
 
-function renderVideos(){
-  const grid=document.getElementById('videos-grid'),fil=channels.filter(chVisible),all=[];
-  fil.forEach(ch=>(ch.videos||[]).forEach(v=>all.push({ch,v})));
-  all.sort((a,b)=>new Date(b.v.publishedAt)-new Date(a.v.publishedAt));
-  if(!all.length){grid.innerHTML='<div class="no-videos">No recent videos found. Try <strong style="color:#e94560">&#x21BB; Refresh All</strong> to fetch the latest.</div>';return}
-  grid.innerHTML=all.map(({ch,v})=>{
-    const col=getColor(ch),tags=(ch.tags||[]).map(t=>`<span class="tag-badge">${esc(t)}</span>`).join(''),lang=ch.language?`<span class="lang-badge">${esc(ch.language)}</span>`:'';
-    const thumb=v.thumb?`<img class="video-thumb" src="${esc(v.thumb)}" alt="" loading="lazy"/>`:`<div class="video-thumb-placeholder"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>`;
-    return`<a class="video-card" href="${esc(v.url)}" target="_blank" rel="noopener">${thumb}<div class="video-info"><div class="video-title">${esc(v.title)}</div><div class="video-channel" style="color:${col}cc">${esc(ch.name)}</div><div class="video-date">${fmtD(v.publishedAt)}</div></div><div class="video-footer">${lang}${tags}</div></a>`;
-  }).join('');
-}
 
-function showTip(e,t,d){const tip=document.getElementById('vid-tooltip');document.getElementById('vid-tip-title').textContent=t;document.getElementById('vid-tip-date').textContent=d;tip.style.display='block';tip.style.left=(e.clientX+12)+'px';tip.style.top=(e.clientY-10)+'px'}
-function hideTip(){document.getElementById('vid-tooltip').style.display='none'}
 
 function setFetchStatus(t,m){const e=document.getElementById('fetch-status');e.className='fetch-status '+t;e.textContent=m}
 function clearFetchStatus(){const e=document.getElementById('fetch-status');e.className='fetch-status';e.textContent=''}
@@ -613,12 +547,12 @@ document.getElementById('clock').textContent=now().toLocaleTimeString();
 
 // Expose functions to global scope for onclick handlers
 window.openLogin=openLogin;window.closeLogin=closeLogin;window.checkPassword=checkPassword;
-window.logout=logout;window.switchTab=switchTab;window.toggleFilter=toggleFilter;
+window.logout=logout;window.toggleFilter=toggleFilter;
 window.openChannelModal=openChannelModal;window.closeChannelModal=closeChannelModal;
 window.submitChannel=submitChannel;window.removeChannel=removeChannel;
 window.refreshChannel=refreshChannel;window.refreshAll=refreshAll;
 window.onTagInput=onTagInput;window.onTagKeydown=onTagKeydown;
-window.showTip=showTip;window.hideTip=hideTip;
+
 
 </script>
 </body>
