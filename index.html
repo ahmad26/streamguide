@@ -497,13 +497,17 @@ function fmtD(d){return new Date(d).toLocaleDateString([],{month:'short',day:'nu
 function cd(s){const n=now(),st=statusOf(s);if(st==='live'){if(s.dur>=9000)return'LIVE 24/7';return Math.max(0,Math.round((addMin(s.start,s.dur)-n)/6e4))+'m left'}if(st==='upcoming'){const d=Math.round((new Date(s.start)-n)/6e4);return d<60?'in '+d+'m':'in '+Math.floor(d/60)+'h '+(d%60)+'m'}return'ended'}
 
 // Assign overlapping streams to separate vertical lanes
+function effectiveEnd(s){
+  // for live streams with no real end time, use now+30min for layout purposes only
+  return s.liveNow||s.dur>=9000 ? addMin(now(),30) : addMin(s.start,s.dur);
+}
 function assignLanes(streams){
   const lanes=[];
   streams.forEach(s=>{
     let placed=false;
     for(let i=0;i<lanes.length;i++){
       const last=lanes[i][lanes[i].length-1];
-      if(new Date(s.start)>=addMin(last.start,last.dur)){
+      if(new Date(s.start)>=effectiveEnd(last)){
         lanes[i].push(s);s._lane=i;placed=true;break;
       }
     }
