@@ -45,6 +45,12 @@ body{font-family:'Courier New',monospace;background:#07071a;color:#e0e0f0;min-he
 .tag-badge{font-size:9px;padding:1px 5px;border-radius:2px;background:#3a3a5a;color:#a0a0c0;border:1px solid #4a4a6a}
 .channel-actions{display:flex;gap:4px;margin-top:3px}
 .ch-btn{background:transparent;border:1px solid #2a2a4a;color:#6060a0;padding:1px 6px;border-radius:2px;cursor:pointer;font-size:10px;font-family:'Courier New',monospace;transition:all .15s}
+.manage-item{background:#0f0f23;border:1px solid #2a2a4a;border-radius:4px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.manage-item-info{flex:1;min-width:0}
+.manage-item-name{font-size:13px;font-weight:700;color:#e0e0f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.manage-item-meta{font-size:10px;color:#6060a0;margin-top:2px}
+.manage-item-actions{display:flex;gap:6px;flex-shrink:0}
+.manage-item-actions .ch-btn[disabled]{pointer-events:none}
 .ch-btn:hover{border-color:#e94560;color:#e94560}
 .programs-row{flex:1;display:flex;position:relative;background:#0a0a1a}
 .program-block{position:absolute;height:58px;border-radius:3px;padding:5px 7px;overflow:hidden;border:1px solid transparent;transition:all .15s;display:flex;flex-direction:column;justify-content:space-between;text-decoration:none}
@@ -195,6 +201,18 @@ body{font-family:'Courier New',monospace;background:#07071a;color:#e0e0f0;min-he
 </div>
 
 
+<!-- Manage Channels Modal -->
+<div class="modal-overlay" id="modal-manage">
+  <div class="modal" style="width:500px;max-width:95vw">
+    <h3>Manage Channels</h3>
+    <p class="modal-subtitle">All channels currently in your guide.</p>
+    <div id="manage-list" style="margin-top:12px;display:flex;flex-direction:column;gap:8px;max-height:400px;overflow-y:auto"></div>
+    <div class="modal-actions" style="margin-top:16px">
+      <button class="btn-cancel" onclick="closeManageModal()">Close</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <div id="app">
@@ -205,6 +223,7 @@ body{font-family:'Courier New',monospace;background:#07071a;color:#e0e0f0;min-he
       <div class="header-clock" id="clock">--:--:--</div>
       <span class="admin-badge" id="admin-badge" style="display:none">Admin</span>
       <button class="hdr-btn primary" id="btn-add-channel" style="display:none" onclick="openChannelModal()">+ Add Channel</button>
+      <button class="hdr-btn" id="btn-manage-channels" style="display:none" onclick="openManageModal()">&#9776; Channels</button>
       <button class="hdr-btn" id="btn-admin-login" onclick="openLogin()">Admin</button>
       <button class="hdr-btn" id="btn-admin-logout" style="display:none" onclick="logout()">Logout</button>
     </div>
@@ -251,6 +270,7 @@ function logout(){isAdmin=false;updateAdminUI();showToast('Logged out.')}
 function updateAdminUI(){
   document.getElementById('admin-badge').style.display=isAdmin?'inline':'none';
   document.getElementById('btn-add-channel').style.display=isAdmin?'inline-block':'none';
+  document.getElementById('btn-manage-channels').style.display=isAdmin?'inline-block':'none';
   document.getElementById('btn-admin-login').style.display=isAdmin?'none':'inline-block';
   document.getElementById('btn-admin-logout').style.display=isAdmin?'inline-block':'none';
   renderGrid();
@@ -416,6 +436,7 @@ function hasActiveStreams(ch){
   });
 }
 function chVisible(ch){
+  if(ch.frozen) return false;
   const tagOk=activeTagF.has('all')||(ch.tags||[]).some(t=>activeTagF.has(t));
   const langOk=activeLangF.has('all')||activeLangF.has(ch.language);
   return tagOk&&langOk&&hasActiveStreams(ch);
@@ -455,13 +476,15 @@ async function removeChannel(id){
   await deleteCh(ch);showToast(ch.name+' removed.');
 }
 async function refreshChannel(id){
-  const ch=channels.find(c=>c.id===id);if(!ch)return;showToast('Refreshing '+ch.name+'...');
+  const ch=channels.find(c=>c.id===id);if(!ch)return;
+  if(ch.frozen){showToast(ch.name+' is frozen — unfreeze it first.');return}
+  showToast('Refreshing '+ch.name+'...');
   try{const s=await fetchStreams(ch.channelId);ch.streams=s;ch.lastFetched=new Date().toISOString();await saveCh(ch);showToast(ch.name+' updated.')}
   catch(e){showToast('Error: '+e.message)}
 }
 async function refreshAll(){
   showToast('Refreshing all...');
-  for(const ch of channels){if(!ch.channelId)continue;try{const s=await fetchStreams(ch.channelId);ch.streams=s;ch.lastFetched=new Date().toISOString();await saveCh(ch)}catch(e){}}
+  for(const ch of channels){if(!ch.channelId||ch.frozen)continue;try{const s=await fetchStreams(ch.channelId);ch.streams=s;ch.lastFetched=new Date().toISOString();await saveCh(ch)}catch(e){}}
   showToast('All channels refreshed.');
 }
 
@@ -520,17 +543,18 @@ function renderGrid(){
       <button class="ch-btn" onclick="removeChannel(${ch.id})" title="Remove">&#x2715;</button>
     </div>`:'';
     const numLanes=vs.length>0?assignLanes(vs):1;
-    const LANE_H=62, LANE_PAD=4;
-    const rowH=Math.max(68, numLanes*LANE_H + LANE_PAD);
+    const LANE_H=64, LANE_PAD=4;
+    const rowH=numLanes===1?68:numLanes*LANE_H+LANE_PAD;
     h+=`<div class="channel-row" style="min-height:${rowH}px"><div class="channel-info"><div class="channel-name">${esc(ch.name)}</div><div class="channel-meta">${lang}${tags}</div>${adm}</div><div class="programs-row" style="min-height:${rowH}px">`;
     if(!vs.length){h+=`<div class="empty-row"><div class="empty-msg">No streams in this window</div></div>`}
     else{
       vs.forEach(s=>{
         const left=calcL(s.start,ws),w=calcW(s,ws);if(w<0.5)return;
         const lane=s._lane||0;
-        const topPx=LANE_PAD + lane*LANE_H;
+        const topPx=numLanes===1?5:LANE_PAD+lane*LANE_H;
+        const heightStyle=numLanes===1?`top:5px;bottom:5px`:`top:${topPx}px;height:${LANE_H-LANE_PAD*2}px`;
         const st=statusOf(s),bc=st==='live'?'badge-live':st==='upcoming'?'badge-soon':'badge-ended',bt=st==='live'?'LIVE':st==='upcoming'?'SOON':'ENDED';
-        h+=`<a class="program-block ${st==='live'?'on-now':st}" style="left:${left.toFixed(2)}%;width:${w.toFixed(2)}%;top:${topPx}px;height:${LANE_H-LANE_PAD*2}px;background:${col}22;border-color:${col}66;" href="${esc(s.url)}" target="_blank" rel="noopener" title="${esc(s.title)}">
+        h+=`<a class="program-block ${st==='live'?'on-now':st}" style="left:${left.toFixed(2)}%;width:${w.toFixed(2)}%;${heightStyle};background:${col}22;border-color:${col}66;" href="${esc(s.url)}" target="_blank" rel="noopener" title="${esc(s.title)}">
           <div class="prog-title" style="color:${col}cc">${esc(s.title)}</div>
           <div class="prog-meta"><span class="prog-time">${fmtT(s.start)}</span><span class="prog-badge ${bc}">${bt}</span></div>
           ${st!=='ended'?`<div class="countdown" style="color:${col}cc" id="cd-${s.id}">${cd(s)}</div>`:''}
@@ -554,6 +578,7 @@ function clearFetchStatus(){const e=document.getElementById('fetch-status');e.cl
 function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),3000)}
 
 document.getElementById('modal-channel').addEventListener('click',e=>{if(e.target===e.currentTarget)closeChannelModal()});
+document.getElementById('modal-manage').addEventListener('click',e=>{if(e.target===e.currentTarget)closeManageModal()});
 document.getElementById('login-screen').addEventListener('click',e=>{if(e.target===e.currentTarget)closeLogin()});
 document.addEventListener('click',e=>{if(!e.target.closest('#tags-wrap')&&!e.target.closest('#tag-suggestions'))document.getElementById('tag-suggestions').style.display='none'});
 
@@ -561,11 +586,57 @@ startSync();
 setInterval(()=>{document.getElementById('clock').textContent=now().toLocaleTimeString()},1000);
 setInterval(updateCDs,10000);
 setInterval(renderGrid,60000);
+
 document.getElementById('clock').textContent=now().toLocaleTimeString();
+
+function openManageModal(){
+  renderManageList();
+  document.getElementById('modal-manage').classList.add('open');
+}
+function closeManageModal(){document.getElementById('modal-manage').classList.remove('open')}
+function renderManageList(){
+  const list=document.getElementById('manage-list');
+  const sorted=[...channels].sort((a,b)=>a.name.localeCompare(b.name));
+  if(!sorted.length){list.innerHTML='<div style="color:#3a3a5a;font-size:12px;text-align:center;padding:20px">No channels added yet.</div>';return}
+  list.innerHTML=sorted.map(ch=>{
+    const tags=(ch.tags||[]).join(', ')||'—';
+    const lang=ch.language||'—';
+    const streams=ch.streams?.length||0;
+    const live=(ch.streams||[]).filter(s=>statusOf(s)==='live').length;
+    const upcoming=(ch.streams||[]).filter(s=>statusOf(s)==='upcoming').length;
+    const statusStr=live?`<span style="color:#e94560">${live} live</span>`:(upcoming?`<span style="color:#f0a500">${upcoming} upcoming</span>`:'<span style="color:#3a3a5a">no streams</span>');
+    const frozenStyle=ch.frozen?'opacity:0.45;':'';
+    const freezeLabel=ch.frozen?'&#x25B6;':'&#x23F8;';
+    const freezeTitle=ch.frozen?'Unfreeze':'Freeze';
+    return`<div class="manage-item" style="${frozenStyle}">
+      <div class="manage-item-info">
+        <div class="manage-item-name">${esc(ch.name)}${ch.frozen?'&nbsp;<span style="font-size:9px;background:#3a3a5a;color:#a0a0c0;padding:1px 6px;border-radius:2px;vertical-align:middle">FROZEN</span>':''}</div>
+        <div class="manage-item-meta">Lang: ${esc(lang)} &nbsp;|&nbsp; Tags: ${esc(tags)} &nbsp;|&nbsp; ${statusStr}</div>
+      </div>
+      <div class="manage-item-actions">
+        <button class="ch-btn" onclick="toggleFreeze(${ch.id})" title="${freezeTitle}" style="${ch.frozen?'border-color:#f0a500;color:#f0a500':''}">
+          ${freezeLabel}
+        </button>
+        <button class="ch-btn" onclick="refreshChannel(${ch.id});renderManageList()" title="Refresh" ${ch.frozen?'disabled style="opacity:0.3;cursor:not-allowed"':''}>&#x21BB;</button>
+        <button class="ch-btn" onclick="closeManageModal();openChannelModal(${ch.id})" title="Edit">&#x270E;</button>
+        <button class="ch-btn" onclick="removeChannel(${ch.id})" title="Remove">&#x2715;</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function toggleFreeze(id){
+  const ch=channels.find(c=>c.id===id);if(!ch)return;
+  ch.frozen=!ch.frozen;
+  await saveCh(ch);
+  renderManageList();
+  renderGrid();
+  showToast(ch.name+(ch.frozen?' frozen — hidden from schedule':' unfrozen'));
+}
 
 // Expose functions to global scope for onclick handlers
 window.openLogin=openLogin;window.closeLogin=closeLogin;window.checkPassword=checkPassword;
-window.logout=logout;window.toggleFilter=toggleFilter;
+window.logout=logout;window.openManageModal=openManageModal;window.toggleFreeze=toggleFreeze;window.closeManageModal=closeManageModal;window.renderManageList=renderManageList;window.toggleFilter=toggleFilter;
 window.openChannelModal=openChannelModal;window.closeChannelModal=closeChannelModal;
 window.submitChannel=submitChannel;window.removeChannel=removeChannel;
 window.refreshChannel=refreshChannel;window.refreshAll=refreshAll;
