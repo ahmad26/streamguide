@@ -226,6 +226,7 @@ body{font-family:'Courier New',monospace;background:#07071a;color:#e0e0f0;min-he
       <button class="hdr-btn" id="btn-manage-channels" style="display:none" onclick="openManageModal()">&#9776; Channels</button>
       <button class="hdr-btn" id="btn-admin-login" onclick="openLogin()">Admin</button>
       <button class="hdr-btn" id="btn-admin-logout" style="display:none" onclick="logout()">Logout</button>
+      <a class="hdr-btn" id="btn-oauth-setup" href="/.netlify/functions/oauth-callback" target="_blank" style="display:none;text-decoration:none" title="Authorize YouTube OAuth">&#x1F511; Auth</a>
     </div>
   </div>
 
@@ -271,6 +272,7 @@ function updateAdminUI(){
   document.getElementById('admin-badge').style.display=isAdmin?'inline':'none';
   document.getElementById('btn-add-channel').style.display=isAdmin?'inline-block':'none';
   document.getElementById('btn-manage-channels').style.display=isAdmin?'inline-block':'none';
+  document.getElementById('btn-oauth-setup').style.display=isAdmin?'inline-block':'none';
   document.getElementById('btn-admin-login').style.display=isAdmin?'none':'inline-block';
   document.getElementById('btn-admin-logout').style.display=isAdmin?'inline-block':'none';
   renderGrid();
@@ -372,29 +374,22 @@ async function fetchName(id){
   const d=await r.json();if(d.error)throw new Error(d.error.message);
   if(!d.items?.length)throw new Error('Channel not found');return d.items[0].snippet.title;
 }
-async function fetchStreams(id){
-  const before=new Date(now().getTime()+7*864e5).toISOString();
-  const[lr,ur]=await Promise.all([
-    fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${id}&eventType=live&type=video&maxResults=5&key=${YT_KEY}`),
-    fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${id}&eventType=upcoming&type=video&maxResults=10&publishedBefore=${before}&key=${YT_KEY}`)
-  ]);
-  const[ld,ud]=await Promise.all([lr.json(),ur.json()]);
-  if(ld.error)throw new Error(ld.error.message);if(ud.error)throw new Error(ud.error.message);
-  const liveIds=new Set((ld.items||[]).map(i=>i.id.videoId).filter(Boolean));
-  const all=[...(ld.items||[]),...(ud.items||[])];if(!all.length)return[];
-  const ids=[...new Set(all.map(i=>i.id.videoId).filter(Boolean))].join(',');
-  const dr=await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet,liveStreamingDetails&id=${ids}&key=${YT_KEY}`);
-  const dd=await dr.json();if(dd.error)throw new Error(dd.error.message);
-  return(dd.items||[]).flatMap(v=>{
-    const lsd=v.liveStreamingDetails;if(!lsd)return[];
-    const st=lsd.actualStartTime||lsd.scheduledStartTime;if(!st)return[];
-    const start=new Date(st);
-    // liveNow=true means YouTube confirmed it as currently live - never treat as ended
-    const liveNow=liveIds.has(v.id)||(!lsd.actualEndTime&&!!lsd.actualStartTime);
-    const dur=lsd.actualEndTime?Math.round((new Date(lsd.actualEndTime)-start)/6e4):9999;
-    return[{id:++nextId,title:v.snippet.title,url:`https://youtube.com/watch?v=${v.id}`,start,dur,liveNow}];
-  });
+// ── YouTube via Netlify proxy ─────────────────────────────────────────────
+const PROXY = '/.netlify/functions/youtube';
+
+async function fetchStreams(channelId, bustCache=false) {
+  const url = `${PROXY}?channelId=${channelId}${bustCache ? '&bust=1' : ''}`;
+  const r = await fetch(url);
+  if (!r.ok) throw new Error('Proxy error: ' + r.status);
+  const data = await r.json();
+  if (data.error) throw new Error(data.error);
+  return (data.streams || []).map(s => ({
+    ...s,
+    id: ++nextId,
+    start: new Date(s.start)
+  }));
 }
+
 
 // Tags input
 function getAllTags(){const s=new Set();channels.forEach(c=>(c.tags||[]).forEach(t=>s.add(t)));return[...s].sort()}
@@ -461,7 +456,7 @@ async function submitChannel(){
     const channelId=await resolveId(url);
     setFetchStatus('loading','Fetching channel name...');const name=await fetchName(channelId);
     setFetchStatus('loading','Fetching live & upcoming streams...');
-    const streams=await fetchStreams(channelId);const videos=[];
+    const streams=await fetchStreams(channelId,true);const videos=[];
     let ch=editingId?channels.find(c=>c.id===editingId):channels.find(c=>c.channelId===channelId);
     if(ch){ch.streams=streams;ch.videos=videos;ch.language=lang;ch.tags=tags;ch.channelUrl=url;ch.lastFetched=new Date().toISOString()}
     else ch={id:++nextId,channelId,channelUrl:url,name,language:lang,tags,streams,videos,lastFetched:new Date().toISOString()};
@@ -479,12 +474,12 @@ async function refreshChannel(id){
   const ch=channels.find(c=>c.id===id);if(!ch)return;
   if(ch.frozen){showToast(ch.name+' is frozen — unfreeze it first.');return}
   showToast('Refreshing '+ch.name+'...');
-  try{const s=await fetchStreams(ch.channelId);ch.streams=s;ch.lastFetched=new Date().toISOString();await saveCh(ch);showToast(ch.name+' updated.')}
+  try{const s=await fetchStreams(ch.channelId,true);ch.streams=s;ch.lastFetched=new Date().toISOString();await saveCh(ch);showToast(ch.name+' updated.')}
   catch(e){showToast('Error: '+e.message)}
 }
 async function refreshAll(){
   showToast('Refreshing all...');
-  for(const ch of channels){if(!ch.channelId||ch.frozen)continue;try{const s=await fetchStreams(ch.channelId);ch.streams=s;ch.lastFetched=new Date().toISOString();await saveCh(ch)}catch(e){}}
+  for(const ch of channels){if(!ch.channelId||ch.frozen)continue;try{const s=await fetchStreams(ch.channelId,true);ch.streams=s;ch.lastFetched=new Date().toISOString();await saveCh(ch)}catch(e){}}
   showToast('All channels refreshed.');
 }
 
