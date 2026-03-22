@@ -28,31 +28,26 @@ async function getAccessToken() {
   return data.access_token;
 }
 
+function authHeaders(accessToken) {
+  return accessToken ? { Authorization: `Bearer ${accessToken}` } : {};
+}
+
 async function fetchLiveBroadcasts(channelId, accessToken) {
-  // liveBroadcasts only returns broadcasts for the authenticated user's channel
-  // For other channels we still need search, but we cache aggressively
-  // Cost: 100 units per channel but cached for 15 min
   const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&eventType=live&type=video&maxResults=5&key=${API_KEY}`;
-  const r = await fetch(url, {
-    headers: { Authorization: `Bearer ${accessToken}` }
-  });
+  const r = await fetch(url, { headers: authHeaders(accessToken) });
   return r.json();
 }
 
 async function fetchUpcoming(channelId, accessToken) {
   const before = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
   const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&eventType=upcoming&type=video&maxResults=10&publishedBefore=${before}&key=${API_KEY}`;
-  const r = await fetch(url, {
-    headers: { Authorization: `Bearer ${accessToken}` }
-  });
+  const r = await fetch(url, { headers: authHeaders(accessToken) });
   return r.json();
 }
 
 async function fetchVideoDetails(ids, accessToken) {
   const url = `https://www.googleapis.com/youtube/v3/videos?part=snippet,liveStreamingDetails&id=${ids}&key=${API_KEY}`;
-  const r = await fetch(url, {
-    headers: { Authorization: `Bearer ${accessToken}` }
-  });
+  const r = await fetch(url, { headers: authHeaders(accessToken) });
   return r.json();
 }
 
@@ -79,7 +74,13 @@ exports.handler = async (event) => {
   console.log(`Cache MISS for ${channelId} — fetching from YouTube`);
 
   try {
-    const accessToken = await getAccessToken();
+    // Use OAuth if refresh token is available, otherwise fall back to API key only
+    const hasOAuth = !!REFRESH_TOKEN;
+    let accessToken = null;
+    if (hasOAuth) {
+      try { accessToken = await getAccessToken(); }
+      catch(e) { console.warn('OAuth failed, falling back to API key:', e.message); }
+    }
     const [liveData, upData] = await Promise.all([
       fetchLiveBroadcasts(channelId, accessToken),
       fetchUpcoming(channelId, accessToken)

@@ -480,8 +480,16 @@ async function refreshChannel(id){
   const ch=channels.find(c=>c.id===id);if(!ch)return;
   if(ch.frozen){showToast(ch.name+' is frozen — unfreeze it first.');return}
   showToast('Refreshing '+ch.name+'...');
-  try{const s=await fetchStreams(ch.channelId,true,ch.streams||[]);ch.streams=s;ch.lastFetched=new Date().toISOString();await saveCh(ch);showToast(ch.name+' updated.')}
-  catch(e){showToast('Error: '+e.message)}
+  try{
+    const s=await fetchStreams(ch.channelId,true,ch.streams||[]);
+    ch.streams=s;ch.lastFetched=new Date().toISOString();
+    await saveCh(ch);
+    showToast(ch.name+': '+s.length+' stream(s) found.');
+    renderGrid();
+  }catch(e){
+    console.error('Refresh error for '+ch.name+':',e);
+    showToast('Error refreshing '+ch.name+': '+e.message);
+  }
 }
 async function refreshAll(){
   showToast('Refreshing all...');
