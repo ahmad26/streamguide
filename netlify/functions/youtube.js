@@ -100,11 +100,19 @@ exports.handler = async (event) => {
     ])];
 
     if (!allIds.length) {
+      console.log(`No streams found for ${channelId}`);
       cache[cacheKey] = { streams: [], ts: Date.now() };
       return json({ streams: [], cached: false });
     }
 
-    const details = await fetchVideoDetails(allIds.join(','), accessToken);
+    // Safety check — never call videos API with empty ids
+    const safeIds = allIds.filter(id => id && id.length > 0);
+    if (!safeIds.length) {
+      cache[cacheKey] = { streams: [], ts: Date.now() };
+      return json({ streams: [], cached: false });
+    }
+
+    const details = await fetchVideoDetails(safeIds.join(','), accessToken);
     if (details.error) throw new Error(details.error.message);
 
     const streams = (details.items || []).flatMap(v => {

@@ -484,16 +484,20 @@ async function refreshChannel(id){
     const s=await fetchStreams(ch.channelId,true,ch.streams||[]);
     ch.streams=s;ch.lastFetched=new Date().toISOString();
     await saveCh(ch);
-    showToast(ch.name+': '+s.length+' stream(s) found.');
+    showToast(ch.name+': '+(s.length?s.length+' stream(s) found':'no streams scheduled'));
     renderGrid();
   }catch(e){
     console.error('Refresh error for '+ch.name+':',e);
-    showToast('Error refreshing '+ch.name+': '+e.message);
+    // Clear stale streams so ended streams don't keep showing
+    ch.streams=[];ch.lastFetched=new Date().toISOString();
+    await saveCh(ch);
+    renderGrid();
+    showToast('Error refreshing '+ch.name+' — streams cleared');
   }
 }
 async function refreshAll(){
   showToast('Refreshing all...');
-  for(const ch of channels){if(!ch.channelId||ch.frozen)continue;try{const s=await fetchStreams(ch.channelId,true,ch.streams||[]);ch.streams=s;ch.lastFetched=new Date().toISOString();await saveCh(ch)}catch(e){}}
+  for(const ch of channels){if(!ch.channelId||ch.frozen)continue;try{const s=await fetchStreams(ch.channelId,true,ch.streams||[]);ch.streams=s;ch.lastFetched=new Date().toISOString();await saveCh(ch)}catch(e){ch.streams=[];ch.lastFetched=new Date().toISOString();await saveCh(ch);}}
   showToast('All channels refreshed.');
 }
 
