@@ -62,7 +62,9 @@ exports.handler = async (event) => {
     return { statusCode: 200, headers: corsHeaders() };
   }
 
-  const { channelId, bust } = event.queryStringParameters || {};
+  // prevLiveIds: comma-separated video IDs that were previously marked liveNow
+  // We re-check these every time to detect streams that have ended
+  const { channelId, bust, prevLiveIds } = event.queryStringParameters || {};
   if (!channelId) {
     return json({ error: 'channelId required' }, 400);
   }
@@ -88,13 +90,20 @@ exports.handler = async (event) => {
 
     const liveIds = new Set((liveData.items || []).map(i => i.id.videoId).filter(Boolean));
     const allItems = [...(liveData.items || []), ...(upData.items || [])];
-    if (!allItems.length) {
+
+    // Also include previously-live stream IDs so we can verify if they ended
+    const prevIds = prevLiveIds ? prevLiveIds.split(',').filter(Boolean) : [];
+    const allIds = [...new Set([
+      ...allItems.map(i => i.id.videoId).filter(Boolean),
+      ...prevIds
+    ])];
+
+    if (!allIds.length) {
       cache[cacheKey] = { streams: [], ts: Date.now() };
       return json({ streams: [], cached: false });
     }
 
-    const ids = [...new Set(allItems.map(i => i.id.videoId).filter(Boolean))].join(',');
-    const details = await fetchVideoDetails(ids, accessToken);
+    const details = await fetchVideoDetails(allIds.join(','), accessToken);
     if (details.error) throw new Error(details.error.message);
 
     const streams = (details.items || []).flatMap(v => {
@@ -103,8 +112,12 @@ exports.handler = async (event) => {
       const st = lsd.actualStartTime || lsd.scheduledStartTime;
       if (!st) return [];
       const start = new Date(st);
-      const liveNow = liveIds.has(v.id) || (!lsd.actualEndTime && !!lsd.actualStartTime);
+      // A stream is live NOW only if:
+      // 1. YouTube's live search returned it, AND
+      // 2. It has no actualEndTime (hasn't ended)
+      const liveNow = liveIds.has(v.id) && !lsd.actualEndTime;
       const isUpcoming = !!lsd.scheduledStartTime && !lsd.actualStartTime && new Date(lsd.scheduledStartTime) > new Date();
+      // Skip if ended (was previously live but now has actualEndTime)
       if (!liveNow && !isUpcoming) return [];
       const dur = lsd.actualEndTime ? Math.round((new Date(lsd.actualEndTime) - start) / 60000) : 9999;
       return [{ title: v.snippet.title, url: `https://youtube.com/watch?v=${v.id}`, start: start.toISOString(), dur, liveNow }];
@@ -112,7 +125,7 @@ exports.handler = async (event) => {
 
     // Cache the result
     cache[cacheKey] = { streams, ts: Date.now() };
-    console.log(`Fetched ${streams.length} streams for ${channelId}`);
+    console.log(`Fetched ${streams.length} streams for ${channelId} (${[...liveIds].length} live, ${prevIds.length} prev-live checked)`);
     return json({ streams, cached: false });
 
   } catch (e) {

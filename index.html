@@ -377,8 +377,14 @@ async function fetchName(id){
 // ── YouTube via Netlify proxy ─────────────────────────────────────────────
 const PROXY = '/.netlify/functions/youtube';
 
-async function fetchStreams(channelId, bustCache=false) {
-  const url = `${PROXY}?channelId=${channelId}${bustCache ? '&bust=1' : ''}`;
+async function fetchStreams(channelId, bustCache=false, existingStreams=[]) {
+  // Pass previously-live stream IDs so the proxy can re-check if they ended
+  const prevLiveIds = existingStreams
+    .filter(s => s.liveNow)
+    .map(s => s.url.split('v=')[1])
+    .filter(Boolean)
+    .join(',');
+  const url = `${PROXY}?channelId=${channelId}${bustCache?'&bust=1':''}${prevLiveIds?'&prevLiveIds='+encodeURIComponent(prevLiveIds):''}`;
   const r = await fetch(url);
   if (!r.ok) throw new Error('Proxy error: ' + r.status);
   const data = await r.json();
@@ -474,19 +480,26 @@ async function refreshChannel(id){
   const ch=channels.find(c=>c.id===id);if(!ch)return;
   if(ch.frozen){showToast(ch.name+' is frozen — unfreeze it first.');return}
   showToast('Refreshing '+ch.name+'...');
-  try{const s=await fetchStreams(ch.channelId,true);ch.streams=s;ch.lastFetched=new Date().toISOString();await saveCh(ch);showToast(ch.name+' updated.')}
+  try{const s=await fetchStreams(ch.channelId,true,ch.streams||[]);ch.streams=s;ch.lastFetched=new Date().toISOString();await saveCh(ch);showToast(ch.name+' updated.')}
   catch(e){showToast('Error: '+e.message)}
 }
 async function refreshAll(){
   showToast('Refreshing all...');
-  for(const ch of channels){if(!ch.channelId||ch.frozen)continue;try{const s=await fetchStreams(ch.channelId,true);ch.streams=s;ch.lastFetched=new Date().toISOString();await saveCh(ch)}catch(e){}}
+  for(const ch of channels){if(!ch.channelId||ch.frozen)continue;try{const s=await fetchStreams(ch.channelId,true,ch.streams||[]);ch.streams=s;ch.lastFetched=new Date().toISOString();await saveCh(ch)}catch(e){}}
   showToast('All channels refreshed.');
 }
 
 // Grid
 function getColor(ch){const p=['#7c3aed','#0369a1','#047857','#b45309','#be123c','#0891b2','#9333ea','#c2410c'];if(ch.tags&&ch.tags[0]){let h=0;for(const c of ch.tags[0])h=((h<<5)-h)+c.charCodeAt(0);return p[Math.abs(h)%p.length]}return'#475569'}
 function winStart(){const n=now();n.setMinutes(0,0,0);return n}
-function statusOf(s){const n=now();if(s.liveNow)return'live';const e=addMin(s.start,s.dur);if(new Date(s.start)<=n&&e>n)return'live';if(new Date(s.start)>n)return'upcoming';return'ended'}
+function statusOf(s){
+  const n=now();
+  if(s.liveNow) return'live';
+  const e=addMin(s.start,s.dur);
+  if(new Date(s.start)<=n&&e>n)return'live';
+  if(new Date(s.start)>n)return'upcoming';
+  return'ended';
+}
 function fmtT(d){return new Date(d).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}
 function fmtD(d){return new Date(d).toLocaleDateString([],{month:'short',day:'numeric'})}
 function cd(s){const n=now(),st=statusOf(s);if(st==='live'){if(s.dur>=9000)return'LIVE 24/7';return Math.max(0,Math.round((addMin(s.start,s.dur)-n)/6e4))+'m left'}if(st==='upcoming'){const d=Math.round((new Date(s.start)-n)/6e4);return d<60?'in '+d+'m':'in '+Math.floor(d/60)+'h '+(d%60)+'m'}return'ended'}
@@ -494,7 +507,8 @@ function cd(s){const n=now(),st=statusOf(s);if(st==='live'){if(s.dur>=9000)retur
 // Assign overlapping streams to separate vertical lanes
 function effectiveEnd(s){
   // for live streams with no real end time, use now+30min for layout purposes only
-  return s.liveNow||s.dur>=9000 ? addMin(now(),30) : addMin(s.start,s.dur);
+  const isReallyLive = s.liveNow && (now()-new Date(s.start))<24*60*60*1000;
+  return isReallyLive ? addMin(now(),30) : addMin(s.start,s.dur);
 }
 function assignLanes(streams){
   const lanes=[];
@@ -515,7 +529,7 @@ function calcW(s,ws){
   const total=WMIN*6e4,we=addMin(ws,WMIN);
   const sS=Math.max(new Date(s.start),ws);
   // for live streams use at least now+30min as end so block is always visible
-  const estEnd=statusOf(s)==='live'?addMin(now(),30):addMin(s.start,s.dur);
+  const estEnd=(s.liveNow||s.dur>=9000)?addMin(now(),30):addMin(s.start,s.dur);
   const sE=Math.min(estEnd,we);
   const d=sE-sS;return d<=0?0:d/total*100;
 }
@@ -531,7 +545,7 @@ function renderGrid(){
     const col=getColor(ch);
     const vs=ch.streams.filter(s=>{
       const st=statusOf(s);
-      if(st==='live') return true; // always show currently live streams
+      if(st==='live') return true;
       return new Date(s.start)<we&&addMin(s.start,s.dur)>ws;
     });
     const tags=(ch.tags||[]).map(t=>`<span class="tag-badge">${esc(t)}</span>`).join('');
